@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Pro-Tools</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────────────── -->
+<div class="header">
+    <div class="header__title"><img src="icons/icon48.png" width="18" height="18" style="vertical-align:middle;margin-right:7px;image-rendering:crisp-edges;border-radius:4px;">Canvas Pro-Tools</div>
+    <div class="header__subtitle" id="versionLabel">Canvas Pro-Tools</div>
+</div>
+
+<!-- ── Instance selector (shown only when active tab isn't a recognized Canvas page) ── -->
+<div class="instance-bar" id="instanceBar" style="display:none;">
+    <label for="instanceSelector" class="instance-bar__label">Canvas site:</label>
+    <select id="instanceSelector" class="instance-bar__select"></select>
+</div>
+
+<!-- ── Tabs ────────────────────────────────────────────────────────────── -->
+<div class="tabs">
+    <div class="tab active" data-tab="tools">🛠 Tools</div>
+    <div class="tab" id="tab-tracker" data-tab="tracker">📊 Tracker</div>
+    <div class="tab" id="tab-mappings" data-tab="mappings" style="display:none;">🗂️ Mappings</div>
+    <div class="tab" id="tab-links" data-tab="links">🔗 Links</div>
+    <div class="tab" data-tab="data">💾 Data</div>
+    <div class="tab" data-tab="about">ℹ️ About</div>
+</div>
+
+<!-- ── Content ─────────────────────────────────────────────────────────── -->
+<div class="content">
+
+    <!-- ── Tools pane ──────────────────────────────────────────────────── -->
+    <div class="pane active" id="pane-tools">
+        <div class="pane-header">
+            <span class="pane-header__title">Tools</span>
+            <i class="pane-help-icon" data-tab-help="tools" title="About this tab">i</i>
+        </div>
+        <div class="feature-group">
+            <div class="feature-group__header">
+                <span class="feature-group__label">Everyone</span>
+                <span class="feature-group__desc">Available to all instructors</span>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-card__info">
+                    <div class="feature-card__name">📊 Gradebook Review Tracker<button class="feature-card__caret" data-card="reviewTracker" title="Show description" aria-expanded="false">›</button></div>
+                    <div class="feature-card__desc-wrap" id="desc-reviewTracker">
+                        <div class="feature-card__desc">Mark and track student submission review status in the gradebook and SpeedGrader.</div>
+                    </div>
+                </div>
+                <div class="feature-card__control">
+                    <label class="toggle" title="Toggle Review Tracker">
+                        <input type="checkbox" id="feature-reviewTracker">
+                        <span class="toggle__track"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-card__info">
+                    <div class="feature-card__name">🔢 What-If Grades<button class="feature-card__caret" data-card="whatIfGrades" title="Show description" aria-expanded="false">›</button></div>
+                    <div class="feature-card__desc-wrap" id="desc-whatIfGrades">
+                        <div class="feature-card__desc">Adds a What-If Score column to the instructor view of a student's grades page. Type hypothetical scores to see the impact on current and final grades in real time.</div>
+                    </div>
+                </div>
+                <div class="feature-card__control">
+                    <label class="toggle" title="Toggle What-If Grades">
+                        <input type="checkbox" id="feature-whatIfGrades">
+                        <span class="toggle__track"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-card__info">
+                    <div class="feature-card__name">📋 Rubrics+<button class="feature-card__caret" data-card="rubricPlus" title="Show description" aria-expanded="false">›</button></div>
+                    <div class="feature-card__desc-wrap" id="desc-rubricPlus">
+                        <div class="feature-card__desc">Enhances Canvas rubrics: sorts the Find a Rubric dialog by current course, adds CSV export to rubric pages, assignments, discussions, and quizzes, and adds per-rubric export icons and Import Rubric, Download Template, and Export All Rubrics buttons to the course rubrics list page. Flags whether an assignment's rubric is actually used for grading, adds a Load Rubric Details button to the rubrics list showing each rubric's context, assignment associations, and outcome criteria, and shows an associations report on an individual rubric page listing everything that rubric is attached to.</div>
+                    </div>
+                </div>
+                <div class="feature-card__control">
+                    <label class="toggle" title="Toggle Rubrics+">
+                        <input type="checkbox" id="feature-rubricPlus">
+                        <span class="toggle__track"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-card__info">
+                    <div class="feature-card__name">📝 Assignment Details<button class="feature-card__caret" data-card="assignmentDetails" title="Show description" aria-expanded="false">›</button></div>
+                    <div class="feature-card__desc-wrap" id="desc-assignmentDetails">
+                        <div class="feature-card__desc">Adds a "Load assignment details" item to the options menu on the assignments index page. Annotates each assignment with its submission type, whether it affects the final grade, its rubric (linked, showing grading use and outcome criteria), and whether Turnitin is enabled.</div>
+                    </div>
+                </div>
+                <div class="feature-card__control">
+                    <label class="toggle" title="Toggle Assignment Details">
+                        <input type="checkbox" id="feature-assignmentDetails">
+                        <span class="toggle__track"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-card__info">
+                    <div class="feature-card__name">🗂️ Checkpoint Rubric Mapper<button class="feature-card__caret" data-card="checkpointMapper" title="Show description" aria-expanded="false">›</button></div>
+                    <div class="feature-card__desc-wrap" id="desc-checkpointMapper">
+                        <div class="feature-card__desc">For checkpoint-enabled discussions: assign each rubric criterion to a checkpoint. Mapping pills appear on discussion rubrics and on individual rubric pages, and the course rubrics list marks which rubrics are already mapped. In SpeedGrader, saving the rubric assessment sums the mapped scores into the Reply to Topic and Required Replies grade boxes.</div>
+                    </div>
+                </div>
+                <div class="feature-card__control">
+                    <label class="toggle" title="Toggle Checkpoint Rubric Mapper">
+                        <input type="checkbox" id="feature-checkpointMapper">
+                        <span class="toggle__track"></span>
+                    </label>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="feature-group" style="margin-top:14px;">
+            <div class="feature-group__header">
+                <span class="feature-group__label">SpeedGrader tweaks</span>
+                <span class="feature-group__desc">Visual improvements for grading</span>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-card__info">
+                    <div class="feature-card__name">🧭 Quiz Nav & Highlighting<button class="feature-card__caret" data-card="quizNav" title="Show description" aria-expanded="false">›</button></div>
+                    <div class="feature-card__desc-wrap" id="desc-quizNav">
+                        <div class="feature-card__desc">Color-codes quiz nav links by question status. Works in SpeedGrader and standalone quiz history view.</div>
+                    </div>
+                </div>
+                <div class="feature-card__control">
+                    <label class="toggle" title="Toggle Quiz Nav & Highlighting">
+                        <input type="checkbox" id="feature-quizNav">
+                        <span class="toggle__track"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-card__info">
+                    <div class="feature-card__name">🕐 Graded At Timestamp<button class="feature-card__caret" data-card="sgGradedAt" title="Show description" aria-expanded="false">›</button></div>
+                    <div class="feature-card__desc-wrap" id="desc-sgGradedAt">
+                        <div class="feature-card__desc">Shows when a submission was graded and whether it was manually or auto-graded. Displays in the submission info area of SpeedGrader.</div>
+                    </div>
+                </div>
+                <div class="feature-card__control">
+                    <label class="toggle" title="Toggle Graded At Timestamp">
+                        <input type="checkbox" id="feature-sgGradedAt">
+                        <span class="toggle__track"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-card__info">
+                    <div class="feature-card__name">🔍 Avatar Zoom<button class="feature-card__caret" data-card="sgAvatarZoom" title="Show description" aria-expanded="false">›</button></div>
+                    <div class="feature-card__desc-wrap" id="desc-sgAvatarZoom">
+                        <div class="feature-card__desc">Hover over a student's avatar in SpeedGrader to zoom it to 2×. Helps identify students by photo.</div>
+                    </div>
+                </div>
+                <div class="feature-card__control">
+                    <label class="toggle" title="Toggle Avatar Zoom">
+                        <input type="checkbox" id="feature-sgAvatarZoom">
+                        <span class="toggle__track"></span>
+                    </label>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="feature-group" style="margin-top:14px;">
+            <div class="feature-group__header">
+                <span class="feature-group__label">Dean / Admin</span>
+                <span class="feature-group__desc">For course administrators</span>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-card__info">
+                    <div class="feature-card__name">🔗 Admin Course Links<button class="feature-card__caret" data-card="adminCourseLinks" title="Show description" aria-expanded="false">›</button></div>
+                    <div class="feature-card__desc-wrap" id="desc-adminCourseLinks">
+                        <div class="feature-card__desc">Adds quick-access links beneath each course in the admin course search results. Configure which links appear in the 🔗 Links tab.</div>
+                    </div>
+                </div>
+                <div class="feature-card__control">
+                    <label class="toggle" title="Toggle Admin Course Links">
+                        <input type="checkbox" id="feature-adminCourseLinks">
+                        <span class="toggle__track"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-card__info">
+                    <div class="feature-card__name">🎓 User Enrollments<button class="feature-card__caret" data-card="userEnrollments" title="Show description" aria-expanded="false">›</button></div>
+                    <div class="feature-card__desc-wrap" id="desc-userEnrollments">
+                        <div class="feature-card__desc">Sorts the Courses list on a user's page and adds a search box plus term and course-status filters. Sorted by enrollment status, then Default Term, Master Templates, and dated terms newest first.</div>
+                    </div>
+                </div>
+                <div class="feature-card__control">
+                    <label class="toggle" title="Toggle User Enrollments">
+                        <input type="checkbox" id="feature-userEnrollments">
+                        <span class="toggle__track"></span>
+                    </label>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ── Tracker pane ─────────────────────────────────────────────────── -->
+    <div class="pane" id="pane-tracker">
+        <div class="pane-header">
+            <span class="pane-header__title">Tracker</span>
+            <i class="pane-help-icon" data-tab-help="tracker" title="About this tab">i</i>
+        </div>
+
+        <!-- Sub-tabs -->
+        <div class="sub-tabs">
+            <div class="sub-tab active" data-sub-tab="courses">Courses</div>
+            <div class="sub-tab" data-sub-tab="states">🎨 States</div>
+        </div>
+
+        <!-- Courses sub-pane -->
+        <div class="sub-pane active" id="sub-pane-courses">
+            <div class="tracker-global">
+                <span class="tracker-global__label">Global tracking enabled</span>
+                <label class="toggle" title="Disable to pause tracking on all courses">
+                    <input type="checkbox" id="globalToggle" checked>
+                    <span class="toggle__track"></span>
+                </label>
+            </div>
+
+            <div class="section-label" style="margin-top:12px;">Tracked Courses</div>
+            <div class="course-list" id="courseList">
+                <div class="empty-state" id="emptyState">
+                    No courses tracked yet.<br>
+                    Open a Canvas gradebook and enable the tracker.
+                </div>
+            </div>
+        </div>
+
+        <!-- States sub-pane -->
+        <div class="sub-pane" id="sub-pane-states">
+            <div class="section-label">Default States</div>
+            <div class="state-list" id="defaultStateList"></div>
+
+            <hr class="divider">
+
+            <div class="section-label">Custom States <span style="font-size:10px;font-weight:400;color:#8a9bb0;">(up to 4)</span></div>
+            <div class="state-list" id="customStateList"></div>
+
+            <div class="add-state-row" id="addStateRow" style="margin-top:10px;">
+                <input type="text" class="state-row__input state-row__input--emoji" id="newStateEmoji" placeholder="🔵" maxlength="2">
+                <input type="text" class="state-row__input state-row__input--label" id="newStateLabel" placeholder="State label...">
+                <input type="color" class="state-row__input state-row__input--color" id="newStateColor" value="#3498db" title="Indicator color">
+                <button class="btn btn--primary" id="addStateBtn">Add</button>
+            </div>
+            <div style="font-size:10px;color:#8a9bb0;margin-top:6px;">Changes apply immediately to all open gradebook tabs.</div>
+        </div>
+    </div>
+
+    <!-- ── Data pane ────────────────────────────────────────────────────── -->
+    <div class="pane" id="pane-data">
+        <div class="pane-header">
+            <span class="pane-header__title">Data</span>
+            <i class="pane-help-icon" data-tab-help="data" title="About this tab">i</i>
+        </div>
+
+        <!-- ── Tracker section (visible when reviewTracker is enabled) ── -->
+        <div class="data-category" id="data-section-tracker">
+            <div class="section-label">📊 Tracker</div>
+            <div class="data-actions">
+                <div class="data-action-row">
+                    <div class="data-action-row__title">📤 Export</div>
+                    <div class="data-action-row__desc">Download all review tracker data — markers, course settings, and custom states — as a JSON file.</div>
+                    <button class="btn btn--primary" id="exportTrackerBtn">Export tracker data</button>
+                </div>
+                <div class="data-action-row">
+                    <div class="data-action-row__title">🗑 Clear</div>
+                    <div class="data-action-row__desc">Remove all review markers, course settings, and custom states. Cannot be undone.</div>
+                    <button class="btn btn--danger" id="clearTrackerBtn">Clear tracker data</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Links section (visible when adminCourseLinks is enabled) ── -->
+        <div class="data-category" id="data-section-links">
+            <div class="section-label">🔗 Links</div>
+            <div class="data-actions">
+                <div class="data-action-row">
+                    <div class="data-action-row__title">📤 Export</div>
+                    <div class="data-action-row__desc">Download your admin course link configuration — link order, toggles, and custom links — as a JSON file.</div>
+                    <button class="btn btn--primary" id="exportLinksBtn">Export links data</button>
+                </div>
+                <div class="data-action-row">
+                    <div class="data-action-row__title">🗑 Clear</div>
+                    <div class="data-action-row__desc">Reset all link configuration to defaults. Cannot be undone.</div>
+                    <button class="btn btn--danger" id="clearLinksBtn">Clear links data</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Mappings section (visible when checkpointMapper is enabled) ── -->
+        <div class="data-category" id="data-section-mappings">
+            <div class="section-label">🗂️ Mappings</div>
+            <div class="data-actions">
+                <div class="data-action-row">
+                    <div class="data-action-row__title">📤 Export</div>
+                    <div class="data-action-row__desc">Download all checkpoint rubric mappings as a JSON file.</div>
+                    <button class="btn btn--primary" id="exportMappingsBtn">Export mappings data</button>
+                </div>
+                <div class="data-action-row">
+                    <div class="data-action-row__title">🗑 Clear</div>
+                    <div class="data-action-row__desc">Remove all checkpoint rubric mappings. Cannot be undone.</div>
+                    <button class="btn btn--danger" id="clearMappingsBtn">Clear mappings data</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Settings section (always visible) ── -->
+        <div class="data-category" id="data-section-settings">
+            <div class="section-label">⚙️ Settings</div>
+            <div class="data-actions">
+                <div class="data-action-row">
+                    <div class="data-action-row__title">📤 Export</div>
+                    <div class="data-action-row__desc">Download your feature settings — which tools are on or off — as a JSON file.</div>
+                    <button class="btn btn--primary" id="exportSettingsBtn">Export settings</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Full Backup section (always visible) ── -->
+        <div class="data-category" id="data-section-backup">
+            <div class="section-label">💾 Full Backup</div>
+            <div class="data-actions">
+                <div class="data-action-row">
+                    <div class="data-action-row__title">📤 Export All</div>
+                    <div class="data-action-row__desc">Download a backup of all data categories as a single JSON file.</div>
+                    <button class="btn btn--primary" id="exportAllBtn">Export all data</button>
+                </div>
+                <div class="data-action-row">
+                    <div class="data-action-row__title">📥 Import</div>
+                    <div class="data-action-row__desc">Restore from a backup file. The file is inspected first — you choose which categories to restore before anything is overwritten.</div>
+                    <button class="btn" id="importAllBtn">Import from file</button>
+                </div>
+                <div class="data-action-row">
+                    <div class="data-action-row__title">🗑 Clear All Data</div>
+                    <div class="data-action-row__desc">Remove all tracker data, link configuration, and checkpoint mappings. Feature settings are preserved. Cannot be undone.</div>
+                    <button class="btn btn--danger" id="clearAllBtn">Clear everything</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── Links pane ─────────────────────────────────────────────────────── -->
+    <div class="pane" id="pane-links">
+        <div class="pane-header">
+            <span class="pane-header__title">Links</span>
+            <i class="pane-help-icon" data-tab-help="links" title="About this tab">i</i>
+        </div>
+        <div id="linksList"></div>
+    </div>
+
+    <!-- ── Mappings pane ───────────────────────────────────────────────────── -->
+    <div class="pane" id="pane-mappings">
+        <div class="pane-header">
+            <span class="pane-header__title">Checkpoint Mappings</span>
+        </div>
+        <div style="font-family:Lato,sans-serif;font-size:12px;color:#2d3b45;">
+            <div style="margin-bottom:10px;color:#555;line-height:1.5;">
+                Rubric-to-checkpoint mappings saved by the Checkpoint Rubric Mapper feature. Each mapping is keyed by rubric ID and is reused for any assignment using that rubric within the same course.
+            </div>
+            <div style="margin-bottom:12px;">
+                <button class="btn btn--danger" id="clearAllMappingsBtn" style="width:100%;">🗑 Clear All Mappings</button>
+            </div>
+            <div id="mappingsList"></div>
+        </div>
+    </div>
+
+    <!-- ── About pane ─────────────────────────────────────────────────────── -->
+    <div class="pane" id="pane-about">
+        <div class="pane-header">
+            <span class="pane-header__title">About</span>
+        </div>
+
+        <div style="font-family:Lato,sans-serif;font-size:12px;color:#2d3b45;line-height:1.6;">
+
+            <div style="text-align:center;padding:12px 0 16px;">
+                <img src="icons/icon48.png" width="36" height="36" style="image-rendering:crisp-edges;border-radius:8px;display:block;margin:0 auto 8px;">
+                <div style="font-size:15px;font-weight:700;color:#2d3b45;">Canvas Pro-Tools</div>
+                <div style="font-size:11px;color:#8a9bb0;" id="aboutVersionLabel">Version</div>
+            </div>
+
+            <div style="border-top:1px solid #e8eaec;padding-top:12px;margin-bottom:12px;color:#555;">
+                A professional suite of productivity tools for Canvas LMS instructors.
+                Built by Erik Gustafson.
+            </div>
+
+            <div style="font-weight:700;margin-bottom:6px;">🙏 Credits</div>
+            <div style="color:#555;margin-bottom:4px;">
+                Several features in this extension are adapted from original work by
+                <a href="https://github.com/jamesjonesmath" target="_blank" style="color:#0770a3;text-decoration:none;">James Jones</a>
+                via the <a href="https://github.com/jamesjonesmath/canvancement" target="_blank" style="color:#0770a3;text-decoration:none;">Canvancement</a> project,
+                used under the ISC License.
+            </div>
+
+            <div style="margin-top:10px;padding:10px;background:#f5f7f8;border-radius:6px;border:1px solid #e8eaec;">
+                <div style="font-weight:700;margin-bottom:6px;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#8a9bb0;">Adapted Features</div>
+                <div style="margin-bottom:4px;">🔍 <a href="https://github.com/jamesjonesmath/canvancement/blob/master/miscellaneous/canvas-css-tweaks.user.js" target="_blank" style="color:#0770a3;text-decoration:none;">Avatar Zoom</a></div>
+                <div style="margin-bottom:4px;">📋 <a href="https://github.com/jamesjonesmath/canvancement/blob/master/rubrics/find-rubric-sorter/find-rubric-sorter.user.js" target="_blank" style="color:#0770a3;text-decoration:none;">Find Rubric Sorter</a></div>
+                <div style="margin-bottom:4px;">🔗 <a href="https://github.com/jamesjonesmath/canvancement/tree/master/courses/admin-course-links" target="_blank" style="color:#0770a3;text-decoration:none;">Admin Course Links</a></div>
+                <div>🧭 <a href="https://github.com/jamesjonesmath/canvancement/tree/master/quizzes/grade_by_question" target="_blank" style="color:#0770a3;text-decoration:none;">Quiz Navigation & Highlighting</a></div>
+            </div>
+
+            <div style="color:#555;margin-top:10px;margin-bottom:4px;">
+                Additional features are adapted from original work by
+                <a href="https://github.com/Code-with-Ski" target="_blank" style="color:#0770a3;text-decoration:none;">Code with Ski</a>
+                via the <a href="https://github.com/Code-with-Ski/Canvas-LMS-Mods" target="_blank" style="color:#0770a3;text-decoration:none;">Canvas LMS Mods</a> project,
+                used under the MIT License.
+            </div>
+
+            <div style="margin-top:10px;padding:10px;background:#f5f7f8;border-radius:6px;border:1px solid #e8eaec;">
+                <div style="font-weight:700;margin-bottom:6px;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#8a9bb0;">Adapted Features</div>
+                <div style="margin-bottom:4px;">✅ <a href="https://github.com/Code-with-Ski/Canvas-LMS-Mods/tree/main/canvas-mods/courses/assignments/feature-rubric-use-for-grading-notification" target="_blank" style="color:#0770a3;text-decoration:none;">Rubric Used-for-Grading Badge</a></div>
+                <div style="margin-bottom:4px;">📊 <a href="https://github.com/Code-with-Ski/Canvas-LMS-Mods/tree/main/canvas-mods/shared-locations/rubrics/feature-load-rubric-details" target="_blank" style="color:#0770a3;text-decoration:none;">Load Rubric Details</a></div>
+                <div style="margin-bottom:4px;">🔗 <a href="https://github.com/Code-with-Ski/Canvas-LMS-Mods/tree/main/canvas-mods/shared-locations/rubrics/feature-load-rubric-associations" target="_blank" style="color:#0770a3;text-decoration:none;">Rubric Associations Report</a></div>
+                <div style="margin-bottom:4px;">📝 <a href="https://github.com/Code-with-Ski/Canvas-LMS-Mods/tree/main/canvas-mods/courses/assignments/feature-load-assignment-details" target="_blank" style="color:#0770a3;text-decoration:none;">Load Assignment Details</a></div>
+                <div>🎓 <a href="https://github.com/Code-with-Ski/Canvas-LMS-Mods/tree/main/canvas-mods/shared-locations/users/feature-enhance-courses-list" target="_blank" style="color:#0770a3;text-decoration:none;">User Enrollments</a></div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- ── Footer ──────────────────────────────────────────────────────────── -->
+<div class="footer">
+    <span id="storageUsage">Calculating...</span>
+    <button id="tipsHelpBtn" style="background:none;border:none;cursor:pointer;font-size:11px;color:#0770a3;font-family:inherit;padding:0;">💡 Tips & Help</button>
+</div>
+
+<!-- ── Tips & Help panel ─────────────────────────────────────────────── -->
+<div id="tipsHelpPanel" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:99999;align-items:center;justify-content:center;">
+    <div id="tipsHelpDialog" style="background:#fff;border-radius:8px;padding:22px 24px 18px;max-width:340px;width:90%;box-shadow:0 4px 24px rgba(0,0,0,0.22);font-family:Lato,sans-serif;font-size:12px;color:#2d3b45;line-height:1.6;position:relative;max-height:80vh;overflow-y:auto;">
+        <button id="tipsHelpClose" style="position:absolute;top:10px;right:12px;background:none;border:none;font-size:16px;cursor:pointer;color:#888;line-height:1;">✕</button>
+        <div style="font-size:14px;font-weight:700;margin-bottom:14px;color:#0770a3;">💡 Tips & Help</div>
+
+        <div style="font-weight:700;margin-bottom:4px;">🛠 Tools tab</div>
+        <div style="color:#555;margin-bottom:12px;">Toggle individual features on or off. Most changes take effect on the next page load.</div>
+
+        <div style="border-top:1px solid #e8eaec;padding-top:12px;font-weight:700;margin-bottom:4px;">📊 Tracker tab</div>
+        <div style="color:#555;margin-bottom:12px;">Lists all courses you have enabled for review tracking. Use the Global toggle to pause tracking across all courses at once without losing any data. Switch to the 🎨 States sub-tab to customize your review workflow — add up to 4 custom states with your own emoji, label, and indicator color.</div>
+
+        <div style="border-top:1px solid #e8eaec;padding-top:12px;font-weight:700;margin-bottom:4px;">🔗 Links tab</div>
+        <div style="color:#555;margin-bottom:12px;">Controls which quick-access links appear beneath each course in the Admin course search results. Toggle links on or off, and use the ↑ and ↓ buttons to change their order.</div>
+
+        <div style="border-top:1px solid #e8eaec;padding-top:12px;font-weight:700;margin-bottom:4px;">💾 Data tab</div>
+        <div style="color:#555;margin-bottom:12px;">Manage your Canvas Pro-Tools data by category. Tracker, Links, and Mappings can each be exported or cleared on their own, and Settings can be exported. Importing is done through Full Backup: the file is inspected first, then you choose which categories to restore. Clear All removes tracker data, links, and mappings for this Canvas instance, but never your feature settings.</div>
+
+        <div style="border-top:2px solid #c7cdd1;padding-top:12px;font-weight:700;margin-bottom:4px;color:#0770a3;">📊 Gradebook Review Tracker</div>
+        <div style="color:#555;margin-bottom:12px;">Enable tracking on any course by opening its gradebook and toggling the tracker from the ▾ menu. Right-click any grade cell to set a review status, or right-click a column header to mark all visible students at once. Status markers also appear in the submission tray and SpeedGrader, and sync back to the gradebook automatically.</div>
+
+        <div style="border-top:1px solid #e8eaec;padding-top:12px;font-weight:700;margin-bottom:4px;">⚡ SpeedGrader</div>
+        <div style="color:#555;margin-bottom:12px;">A Review Status badge appears in the grade area. Click it to mark the current student. The badge updates as you navigate between students and syncs back to the gradebook.</div>
+
+        <div style="border-top:1px solid #e8eaec;padding-top:12px;font-weight:700;margin-bottom:4px;">🧭 Quiz Nav & Highlighting</div>
+        <div style="color:#555;margin-bottom:12px;">Color-codes quiz navigation links by question status: pale yellow = unanswered, light pink = incorrect, light purple = needs manual review (essay, short answer, or fill-in-multiple-blanks). Works in both SpeedGrader and the standalone quiz history view.</div>
+
+        <div style="border-top:1px solid #e8eaec;padding-top:12px;font-weight:700;margin-bottom:4px;">📋 Rubrics+</div>
+        <div style="color:#555;margin-bottom:12px;">When you open the Find a Rubric dialog, the current course floats to the top of the list and term information is added to each entry. An Export CSV button appears on individual rubric pages, assignments, discussions, and quizzes — click it to download the rubric as a spreadsheet-ready CSV file. On quiz pages the CSV opens in a new tab instead of downloading directly, so allow pop-ups for your Canvas site if nothing appears. On the course Rubrics list page, each rubric row has a persistent download icon (between the edit and delete icons) to export that rubric directly. The sidebar also adds four buttons: Import Rubric to upload a CSV and create a new rubric in the course; Download Template to get a blank CSV pre-formatted for import; Export All Rubrics to download every rubric in the course as a single CSV file; and Load Rubric Details to show each rubric's context, assignment associations, and outcome criteria. When importing a multi-rubric CSV, Canvas creates each rubric separately using the Rubric Name column to distinguish them. On an assignment, a badge flags whether the attached rubric is actually used for grading, and an individual rubric page gains an associations report listing everything that rubric is attached to.</div>
+
+        <div style="border-top:1px solid #e8eaec;padding-top:12px;font-weight:700;margin-bottom:4px;">📝 Assignment Details</div>
+        <div style="color:#555;margin-bottom:12px;">On the course Assignments page, open the ⋮ options menu at the top and choose "Load assignment details". Each assignment is then annotated in place with its submission type, whether it counts toward the final grade, its attached rubric (linked, with whether that rubric is used for grading and any outcome criteria), and whether Turnitin is enabled. Nothing is changed on the page until you run it.</div>
+
+        <div style="border-top:1px solid #e8eaec;padding-top:12px;font-weight:700;margin-bottom:4px;">🕐 Graded At Timestamp</div>
+        <div style="color:#555;margin-bottom:12px;">Displays when a submission was graded and whether it was graded manually or auto-graded. Appears in the submission info area of SpeedGrader.</div>
+
+        <div style="border-top:1px solid #e8eaec;padding-top:12px;font-weight:700;margin-bottom:4px;">🔍 Avatar Zoom</div>
+        <div style="color:#555;margin-bottom:12px;">Hover over a student's avatar in SpeedGrader to zoom it to 2×. Helps identify students by photo when grading.</div>
+
+        <div style="border-top:1px solid #e8eaec;padding-top:12px;font-weight:700;margin-bottom:4px;">🗂️ Checkpoint Rubric Mapper</div>
+        <div style="color:#555;margin-bottom:12px;">On checkpoint-enabled discussions with a rubric attached, each criterion row shows a small pill. Click the pill to assign that criterion to "Reply to Topic", "Required Replies", or "Ignore". The same pills appear on an individual rubric's page, so a rubric can be mapped before it is ever attached to a discussion, and the course Rubrics list marks each already-mapped rubric with a "✓ Checkpoint mapped" badge. Mappings are saved per rubric and reused everywhere that rubric is used. In SpeedGrader, saving the rubric assessment sums the mapped scores and writes them to the checkpoint grade boxes.</div>
+
+        <div style="border-top:1px solid #e8eaec;padding-top:12px;font-weight:700;margin-bottom:4px;">🔢 What-If Grades</div>
+        <div style="color:#555;margin-bottom:12px;">Open any student's grades page as an instructor and click "📊 What-If Grades" to reveal a new column. Type a hypothetical score for any assignment — including 0-point extra credit assignments — to instantly see how it affects the student's current and final grade. Type EX to model the assignment being excused and dropped from the calculation. Group subtotals update live too. Click ↺ Reset to clear all hypothetical scores.</div>
+
+        <div style="border-top:1px solid #e8eaec;padding-top:12px;font-weight:700;margin-bottom:4px;">🔗 Admin Course Links</div>
+        <div style="color:#555;margin-bottom:12px;">Adds quick-access links beneath each course in the Admin course search results page. Configure which links appear and their order in the 🔗 Links tab.</div>
+
+        <div style="border-top:1px solid #e8eaec;padding-top:12px;font-weight:700;margin-bottom:4px;">🎓 User Enrollments</div>
+        <div style="color:#555;">On a user's page in Canvas, the Courses list gains a search box plus term and course-status filters, and is re-sorted so active enrollments come first. Within that, courses are grouped by Default Term, then Master Templates, then dated terms with the newest first. A count above the list shows how many enrollments are currently visible. Useful on accounts with long enrollment histories.</div>
+    </div>
+</div>
+
+<div class="popup-toast" id="popupToast"></div>
+
+<script src="popup.js"></script>
+</body>
+</html>
