@@ -80,6 +80,6 @@ changed, is in [CREDITS.md](CREDITS.md).
 
 ## License
 
-ISC. See [LICENSE](LICENSE).
+ISC. See [LICENSE](CREDITS.md).
 
 Adapted work from the projects above remains under its original license.
