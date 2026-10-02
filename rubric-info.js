@@ -429,7 +429,10 @@
         return null;
     }
 
-    function fetchAssignmentNames() {
+    // The same bulk call also carries each assignment's points_possible, so
+    // points come along at no extra request cost. Resolves to
+    // { names: {id: name}, points: {id: number|null} }.
+    function fetchAssignmentInfo() {
         var results = [];
 
         function next(pageUrl) {
@@ -451,10 +454,21 @@
 
         return next('/api/v1/courses/' + courseId + '/assignments?per_page=100')
             .then(function (list) {
-                var byId = {};
-                list.forEach(function (a) { byId[a.id] = a.name; });
-                return byId;
+                var info = { names: {}, points: {} };
+                list.forEach(function (a) {
+                    info.names[a.id] = a.name;
+                    info.points[a.id] =
+                        (typeof a.points_possible === 'number')
+                            ? a.points_possible : null;
+                });
+                return info;
             });
+    }
+
+    // null/undefined means Canvas did not report points for this assignment
+    // (or the lookup missed it); show a dash rather than a misleading 0.
+    function pointsCell(points) {
+        return (points == null) ? '-' : String(points);
     }
 
     // Association types returned here are 'Assignment', 'Course', and
@@ -499,7 +513,7 @@
         if (content) content.insertAdjacentElement('afterbegin', panel);
     }
 
-    function renderAssociationsPanel(rubric, error, namesById) {
+    function renderAssociationsPanel(rubric, error, info) {
         var existing = document.getElementById(ASSOC_PANEL_ID);
         if (existing && existing.parentNode) {
             existing.parentNode.removeChild(existing);
@@ -515,7 +529,8 @@
             return;
         }
 
-        var names = namesById || {};
+        var names  = (info && info.names)  || {};
+        var points = (info && info.points) || {};
 
         var assoc = (rubric.associations || []).filter(function (a) {
             return a.association_type === 'Assignment' && a.association_id != null;
@@ -548,6 +563,7 @@
         var rows = assoc.map(function (a) {
             return [
                 assignmentLinkCell(a, names),
+                pointsCell(points[a.association_id]),
                 gradingCell(a)
             ];
         });
@@ -556,7 +572,7 @@
         // hide_outcome_results. They are deliberately not shown for now; add a
         // third column here if they turn out to be worth surfacing.
         built.addBlock(CPTPanel.makeTable(
-            ['Assignment', 'Used for grading'],
+            ['Assignment', 'Points possible', 'Used for grading'],
             rows,
             assoc.length + (assoc.length === 1 ? ' assignment' : ' assignments')
         ));
@@ -580,9 +596,9 @@
 
                 // Names are an enhancement, not a requirement. If the lookup
                 // fails, still render the panel with ids rather than an error.
-                return fetchAssignmentNames()
-                    .then(function (namesById) {
-                        renderAssociationsPanel(rubric, null, namesById);
+                return fetchAssignmentInfo()
+                    .then(function (info) {
+                        renderAssociationsPanel(rubric, null, info);
                     })
                     .catch(function () {
                         renderAssociationsPanel(rubric, null, {});
