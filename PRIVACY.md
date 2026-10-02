@@ -1,6 +1,6 @@
 # Canvas Pro-Tools - Privacy Policy
 
-**Last updated:** 09/04/2026
+**Last updated:** 10/2/2026
 **Applies to:** Canvas Pro-Tools browser extension, version 4.0.0 and later
 
 ## Summary
@@ -98,4 +98,4 @@ noted in the extension's release notes.
 
 Questions about this policy can be directed to:
 
-gustafsones@gmail.com
+GustafsonES@gmail.com
