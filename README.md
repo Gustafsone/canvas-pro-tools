@@ -6,7 +6,7 @@ your browser against the Canvas site you are already signed in to.
 
 > **Chrome Web Store:** https://chromewebstore.google.com/detail/canvas-pro-tools/kmknhmanmianmleefcabaocbekjjhplf
 >
-> Until then, see [Installing for testing](#installing-for-testing) below.
+> If you want to install it locally, see [Installing locally](#install-locally) below. Especially, if you self-host Canvas.
 
 ## Features
 
@@ -39,7 +39,7 @@ ship turned **off** so a fresh install is not noisy.
 | 🔗 **Admin Course Links** | Adds configurable quick-access links beneath each course in the admin course search results. | Off |
 | 🎓 **User Enrollments** | Adds a search box plus term and course-status filters to the Courses list on a user's page, and re-sorts it so active enrollments come first. | Off |
 
-## Installing for testing
+## Install Locally
 
 Until the Web Store listing is live:
 
@@ -47,7 +47,7 @@ Until the Web Store listing is live:
 2. Open `chrome://extensions` and turn on **Developer mode**.
 3. Click **Load unpacked** and select the folder.
 
-The extension activates on `*.instructure.com` pages only.
+The extension activates on `*.instructure.com` pages only. However, you can change it to run on any domain if you edit the files. A feature to allow for self-hosted domains or custom domains will be coming. 
 
 ## Privacy
 
