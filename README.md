@@ -55,7 +55,7 @@ in your browser's local extension storage on your own device, and are separated
 by Canvas site so data from different institutions never mixes. Student names,
 email addresses, grades, and submitted work are never stored.
 
-Full details in [PRIVACY.md](PRIVACY.md).
+Full details in [PRIVACY.md](canvas-pro-tools/PRIVACY.md).
 
 ## Compatibility
 
@@ -74,10 +74,10 @@ authors:
   James Sekcienski (Code with Ski), under the MIT License
 
 Per-feature attribution, including which behaviour was adapted and what was
-changed, is in [CREDITS.md](CREDITS.md).
+changed, is in [CREDITS.md](canvas-pro-tools/CREDITS.md).
 
 ## License
 
-ISC. See [LICENSE](CREDITS.md).
+ISC. See [LICENSE](canvas-pro-tools/CREDITS.md).
 
 Adapted work from the projects above remains under its original license.
