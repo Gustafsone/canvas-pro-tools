@@ -41,9 +41,7 @@ ship turned **off** so a fresh install is not noisy.
 
 ## Install Locally
 
-Until the Web Store listing is live:
-
-1. Download or clone this repository.
+1. Download or clone the canvas-pro-tools folder in this repository.
 2. Open `chrome://extensions` and turn on **Developer mode**.
 3. Click **Load unpacked** and select the folder.
 
