@@ -4,7 +4,7 @@ A Chrome extension that adds productivity features to the Canvas LMS web
 interface for instructors, deans, and administrators. Everything runs locally in
 your browser against the Canvas site you are already signed in to.
 
-> **Chrome Web Store:** [listing link - add after review approval]
+> **Chrome Web Store:** https://chromewebstore.google.com/detail/canvas-pro-tools/kmknhmanmianmleefcabaocbekjjhplf
 >
 > Until then, see [Installing for testing](#installing-for-testing) below.
 
