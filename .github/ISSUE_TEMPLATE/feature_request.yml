@@ -1,0 +1,20 @@
+name: Feature request
+description: Suggest a new feature or an improvement.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Issues are public. Do not include student names, IDs, grades, or screenshots that show them.
+  - type: textarea
+    id: need
+    attributes:
+      label: What are you trying to do in Canvas?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help
+    validations:
+      required: false

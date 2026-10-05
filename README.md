@@ -21,7 +21,7 @@ ship turned **off** so a fresh install is not noisy.
 | 📊 **Gradebook Review Tracker** | Mark and track student submission review status in the gradebook and SpeedGrader. Supports custom review states with your own labels, emoji, and colors. | Off |
 | 🔢 **What-If Grades** | Adds a What-If Score column to the instructor view of a student's grades page. Type hypothetical scores, or `EX` to model an excused assignment, and see the impact on current and final grades in real time. | On |
 | 📋 **Rubrics+** | Sorts the Find a Rubric dialog by current course, adds CSV export to rubric pages, assignments, discussions, and quizzes, and adds per-rubric export icons plus Import Rubric, Download Template, Export All Rubrics, and Load Rubric Details buttons to the course rubrics list. Flags whether a rubric is actually used for grading. Lets a user edit a locked rubric from the rubric details page. | On |
-| 📝 **Assignment Details** | Adds a "Load assignment details" item to the assignments index options menu. Annotates each assignment with its submission type, whether it affects the final grade, its rubric, and whether Turnitin is enabled. | On |
+| 📝 **Assignment Details** | Adds a "Load assignment details" item to the assignments index options menu. Annotates each assignment with its submission type, whether it affects the final grade, and its rubric. External tool assignments show the tool's name, and Classic and New Quizzes are labeled. | On |
 | 🗂️ **Checkpoint Rubric Mapper** | For checkpoint-enabled discussions, assign each rubric criterion to a checkpoint. In SpeedGrader, saving the rubric assessment sums the mapped scores into the Reply to Topic and Required Replies grade boxes. | Off |
 
 ### SpeedGrader tweaks

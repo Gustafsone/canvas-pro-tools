@@ -1,0 +1,43 @@
+name: Bug report
+description: Something in Canvas Pro-Tools is not working as expected.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Issues are public. Do not include student names, IDs, grades, or screenshots that show them.
+  - type: input
+    id: version
+    attributes:
+      label: Extension version
+      description: Shown at the top of the popup and in the About tab.
+      placeholder: "4.1.0"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and operating system
+      placeholder: "Chrome 130 on Windows 11"
+    validations:
+      required: true
+  - type: input
+    id: page
+    attributes:
+      label: Canvas page
+      description: Which kind of page you were on, for example gradebook, SpeedGrader, rubric page, or assignments list.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened instead
+      description: Include any red error text from the page if you can copy it.
+    validations:
+      required: true
