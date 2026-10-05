@@ -1,0 +1,14 @@
+name: Privacy question
+description: A question about what the extension stores, reads, or sends.
+labels: ["privacy"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please read the Your data and privacy page of the docs first. Issues are public, so do not include student information.
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+    validations:
+      required: true

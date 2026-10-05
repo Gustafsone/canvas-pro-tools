@@ -51,7 +51,7 @@ If you keep Canvas open in several tabs at once, changes made in one tab can ove
 
 [Open an issue on GitHub](https://github.com/Gustafsone/canvas-pro-tools/issues) and include:
 
-- The extension version, shown in the popup's **About** tab.
+- The extension version, shown at the top of the popup and in the **About** tab.
 - The kind of Canvas page you were on.
 - What you expected and what happened instead.
 - Any error text from the page. Do not include student names or grades.
