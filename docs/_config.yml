@@ -41,6 +41,7 @@ footer_content: "Canvas Pro-Tools v4.1.0. Not affiliated with or endorsed by Ins
 # Callouts used on every page:
 #   {: .screenshot }  marks a screenshot to be added later
 #   {: .confirm }     marks a fact that still needs checking (search the site for "To confirm")
+#   {: .important }   a caution the reader should not miss
 callouts_level: quiet
 callouts:
   screenshot:
@@ -49,3 +50,6 @@ callouts:
   confirm:
     title: To confirm
     color: yellow
+  important:
+    title: Important
+    color: red
