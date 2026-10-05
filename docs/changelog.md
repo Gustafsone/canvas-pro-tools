@@ -7,7 +7,7 @@ description: What changed in each Canvas Pro-Tools release.
 # Changelog
 
 {: .confirm }
-> This draft is built from the version number in the manifest and from comments in the source code, not from real release notes. Add release dates and replace or extend the entries with your own notes.
+> This draft is built from the version number in the manifest and from comments in the source code, not from real release notes. Add release dates and replace or extend the entries with your own notes. Releases before 4.0.0 are not listed.
 
 ## 4.1.0
 {: .d-inline-block }
@@ -29,14 +29,6 @@ Current version
 
 {: .confirm }
 > Release date, and the user-visible changes. The privacy policy states that it applies to version 4.0.0 and later, and the store disclosures were first written against 4.0.0. List what else changed.
-
-## 3.7.0
-
-- Checkpoint Rubric Mapper mappings are now saved per rubric. This was a deliberate clean break: mappings saved before 3.7.0 were not migrated, so a rubric mapped in an earlier version needs to be mapped again.
-
-## 3.6.4
-
-- Saved data is now kept separately for each Canvas site, so two institutions never share markers or settings. Older data is migrated when you open the popup.
 
 [Previous: Troubleshooting]({{ '/troubleshooting/' | relative_url }}){: .mr-4 }
 [Next: Credits]({{ '/credits/' | relative_url }})
