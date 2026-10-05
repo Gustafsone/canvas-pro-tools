@@ -1,6 +1,7 @@
 ---
 title: Credits
 nav_order: 9
+permalink: /credits/
 description: Attribution and licenses for the open-source work that some Canvas Pro-Tools features are adapted from.
 ---
 

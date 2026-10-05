@@ -2,6 +2,7 @@
 title: Admin and dean tools
 parent: Features
 nav_order: 3
+permalink: /features/admin/
 description: Admin Course Links and User Enrollments, two tools for people who work across many courses.
 ---
 

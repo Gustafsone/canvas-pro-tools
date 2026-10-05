@@ -1,6 +1,7 @@
 ---
 title: Support
 nav_order: 10
+permalink: /support/
 description: How to get help, report a bug, or ask for a feature for Canvas Pro-Tools.
 ---
 

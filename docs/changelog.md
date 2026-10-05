@@ -1,6 +1,7 @@
 ---
 title: Changelog
 nav_order: 8
+permalink: /changelog/
 description: What changed in each Canvas Pro-Tools release.
 ---
 

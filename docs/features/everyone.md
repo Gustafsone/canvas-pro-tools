@@ -2,6 +2,7 @@
 title: For everyone
 parent: Features
 nav_order: 1
+permalink: /features/everyone/
 description: Gradebook Review Tracker, What-If Grades, Rubrics+, Assignment Details, and Checkpoint Rubric Mapper.
 ---
 

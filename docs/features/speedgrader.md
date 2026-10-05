@@ -2,6 +2,7 @@
 title: In SpeedGrader
 parent: Features
 nav_order: 2
+permalink: /features/speedgrader/
 description: Review Status badge, Quiz Nav and Highlighting, Graded At Timestamp, Avatar Zoom, and checkpoint scores in SpeedGrader.
 ---
 

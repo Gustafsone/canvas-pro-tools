@@ -1,6 +1,7 @@
 ---
 title: Troubleshooting
 nav_order: 7
+permalink: /troubleshooting/
 description: Common problems with Canvas Pro-Tools and what to try, plus how to report a problem.
 ---
 
