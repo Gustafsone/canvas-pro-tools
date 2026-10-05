@@ -17,7 +17,7 @@ Three steps from install to your first useful feature.
 
 ## What is on by default
 
-Six features start on. The other four need setup, serve a narrower audience, or are a matter of preference, so they start off. These defaults come from the extension source, version 4.1.0.
+Five features start on. The other five need setup, serve a narrower audience, or are a matter of preference, so they start off. These defaults come from the extension source, version 4.1.0.
 
 | Feature | Grouped under | Default |
 |---|---|---|
