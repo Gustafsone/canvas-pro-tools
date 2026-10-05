@@ -5,9 +5,10 @@ nav_order: 1
 permalink: /
 description: A Chrome extension that adds practical tools to the Canvas LMS interface for instructors, deans, and administrators.
 ---
+![Canvas Pro-Tools icon]({{ '/assets/images/icon128.png' | relative_url }}){: width="96" height="96" }
 
 # Canvas Pro-Tools
-({{ '/assets/images/icon128.png' | relative_url }})
+
 A Chrome extension that adds practical tools to the Canvas LMS interface for instructors, deans, and administrators. Everything runs in your browser against the Canvas site you are already signed in to.
 {: .fs-6 .fw-300 }
 
