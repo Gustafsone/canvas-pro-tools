@@ -1,6 +1,7 @@
 ---
 title: Quick start
 nav_order: 3
+permalink: /quick-start/
 description: Three steps from install to your first useful feature, and which features are on by default.
 ---
 

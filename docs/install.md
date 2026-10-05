@@ -1,6 +1,7 @@
 ---
 title: Install
 nav_order: 2
+permalink: /install/
 description: How to install Canvas Pro-Tools from the Chrome Web Store or load it unpacked.
 ---
 

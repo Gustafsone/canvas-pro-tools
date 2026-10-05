@@ -1,6 +1,7 @@
 ---
 title: Settings and data
 nav_order: 5
+permalink: /settings/
 description: What each tab of the Canvas Pro-Tools popup does, and how to back up, move, or clear your data.
 ---
 
