@@ -1,0 +1,51 @@
+# Canvas Pro-Tools documentation site
+# Jekyll + Just the Docs, published by GitHub Pages from the /docs folder.
+# Docs describe extension version 4.1.0.
+
+title: Canvas Pro-Tools
+description: User guide for the Canvas Pro-Tools Chrome extension for Canvas LMS.
+url: "https://gustafsone.github.io"
+baseurl: "/canvas-pro-tools"
+
+# TODO before merging: pin a theme release, for example
+# just-the-docs/just-the-docs@v0.x.y. The current release number was not
+# verified when this file was written, so it is left unpinned for now.
+remote_theme: just-the-docs/just-the-docs
+
+plugins:
+  - jekyll-remote-theme
+  - jekyll-seo-tag
+
+color_scheme: light
+search_enabled: true
+heading_anchors: true
+back_to_top: true
+back_to_top_text: "Back to top"
+
+aux_links:
+  "Chrome Web Store":
+    - "https://chromewebstore.google.com/detail/canvas-pro-tools/kmknhmanmianmleefcabaocbekjjhplf"
+  "GitHub":
+    - "https://github.com/Gustafsone/canvas-pro-tools"
+aux_links_new_tab: true
+
+gh_edit_link: true
+gh_edit_link_text: "Edit this page on GitHub"
+gh_edit_repository: "https://github.com/Gustafsone/canvas-pro-tools"
+gh_edit_branch: "main"
+gh_edit_source: docs
+gh_edit_view_mode: "tree"
+
+footer_content: "Canvas Pro-Tools v4.1.0. Not affiliated with or endorsed by Instructure."
+
+# Callouts used on every page:
+#   {: .screenshot }  marks a screenshot to be added later
+#   {: .confirm }     marks a fact that still needs checking (search the site for "To confirm")
+callouts_level: quiet
+callouts:
+  screenshot:
+    title: Screenshot placeholder
+    color: blue
+  confirm:
+    title: To confirm
+    color: yellow
