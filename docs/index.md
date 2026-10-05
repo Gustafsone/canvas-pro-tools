@@ -7,7 +7,7 @@ description: A Chrome extension that adds practical tools to the Canvas LMS inte
 ---
 
 # Canvas Pro-Tools
-
+({{ '/assets/images/icon128.png' | relative_url }})
 A Chrome extension that adds practical tools to the Canvas LMS interface for instructors, deans, and administrators. Everything runs in your browser against the Canvas site you are already signed in to.
 {: .fs-6 .fw-300 }
 
