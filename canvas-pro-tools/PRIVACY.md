@@ -1,6 +1,6 @@
 # Canvas Pro-Tools - Privacy Policy
 
-**Last updated:** 10/2/2026
+**Last updated:** 10/4/2026
 **Applies to:** Canvas Pro-Tools browser extension, version 4.0.0 and later
 
 ## Summary
@@ -27,6 +27,7 @@ institutions never mixes:
 | Custom review states | Any labels, emoji, and colors you define for your own review workflow. |
 | Rubric checkpoint mappings | For each rubric you map, which rubric criterion corresponds to which discussion checkpoint, plus the rubric and course names for display. |
 | Admin link settings | Which quick-access links you want shown, their order, and any custom link labels and paths you add. |
+| Rubric association snapshots | From the Rubric Association Editor (Rubrics+): when you unlock a rubric for editing, the assignments it was attached to and their points are saved so they can be restored afterward, along with a short-lived note used to confirm the result after the page refreshes. A snapshot is removed when you restore that rubric. It is not included in exports or backups, and the popup's Clear All removes any that remain. |
 | Feature settings | Which features you have turned on or off, and small interface preferences such as which panels are expanded. |
 
 **Student names, email addresses, grades, scores, submitted work, and comments
@@ -52,6 +53,13 @@ These requests are made with your existing Canvas login session, exactly as if
 the Canvas page itself had made them, and they return only information your
 Canvas account is already permitted to see. The extension cannot access anything
 your Canvas permissions do not already allow.
+
+Some features change data in Canvas, but only when you click them: importing a
+rubric from a CSV, and unlocking and restoring a rubric's assignment
+associations. To make those requests, the extension reads Canvas's own
+anti-forgery token (the `_csrf_token` cookie on the Canvas page) and sends it
+back to Canvas with the request, the same way Canvas's own pages do. The token
+is held in memory only and is never stored or sent anywhere else.
 
 **The extension never sends data to any server operated by the developer or by
 anyone else.** There are no requests to any domain other than the Canvas site

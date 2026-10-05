@@ -79,7 +79,7 @@
                 <div class="feature-card__info">
                     <div class="feature-card__name">📋 Rubrics+<button class="feature-card__caret" data-card="rubricPlus" title="Show description" aria-expanded="false">›</button></div>
                     <div class="feature-card__desc-wrap" id="desc-rubricPlus">
-                        <div class="feature-card__desc">Enhances Canvas rubrics: sorts the Find a Rubric dialog by current course, adds CSV export to rubric pages, assignments, discussions, and quizzes, and adds per-rubric export icons and Import Rubric, Download Template, and Export All Rubrics buttons to the course rubrics list page. Flags whether an assignment's rubric is actually used for grading, adds a Load Rubric Details button to the rubrics list showing each rubric's context, assignment associations, and outcome criteria, and shows an associations report on an individual rubric page listing everything that rubric is attached to.</div>
+                        <div class="feature-card__desc">Enhances Canvas rubrics: sorts the Find a Rubric dialog by current course, adds CSV export to rubric pages, assignments, discussions, and quizzes, and adds per-rubric export icons and Import Rubric, Download Template, and Export All Rubrics buttons to the course rubrics list page. Flags whether an assignment's rubric is actually used for grading, adds a Load Rubric Details button to the rubrics list showing each rubric's context, assignment associations, and outcome criteria, and shows an associations report on an individual rubric page listing everything that rubric is attached to. On a rubric attached to several assignments, an Unlock rubric for editing button lets you edit it, and Restore associations re-attaches the assignments afterward.</div>
                     </div>
                 </div>
                 <div class="feature-card__control">
@@ -94,7 +94,7 @@
                 <div class="feature-card__info">
                     <div class="feature-card__name">📝 Assignment Details<button class="feature-card__caret" data-card="assignmentDetails" title="Show description" aria-expanded="false">›</button></div>
                     <div class="feature-card__desc-wrap" id="desc-assignmentDetails">
-                        <div class="feature-card__desc">Adds a "Load assignment details" item to the options menu on the assignments index page. Annotates each assignment with its submission type, whether it affects the final grade, its rubric (linked, showing grading use and outcome criteria), and whether Turnitin is enabled.</div>
+                        <div class="feature-card__desc">Adds a "Load assignment details" item to the options menu on the assignments index page. Annotates each assignment with its submission type, whether it affects the final grade, and its rubric (linked, showing grading use and outcome criteria). External tool assignments show the tool's name, and Classic and New Quizzes are labeled.</div>
                     </div>
                 </div>
                 <div class="feature-card__control">
@@ -200,7 +200,7 @@
                 <div class="feature-card__info">
                     <div class="feature-card__name">🎓 User Enrollments<button class="feature-card__caret" data-card="userEnrollments" title="Show description" aria-expanded="false">›</button></div>
                     <div class="feature-card__desc-wrap" id="desc-userEnrollments">
-                        <div class="feature-card__desc">Sorts the Courses list on a user's page and adds a search box plus term and course-status filters. Sorted by enrollment status, then Default Term, Master Templates, and dated terms newest first.</div>
+                        <div class="feature-card__desc">Sorts the Courses list on a user's page and adds a search box plus term and course-status filters. Sorted by enrollment status, then Default Term, then named terms such as Master Templates, then dated terms (for example FA-26) newest first.</div>
                     </div>
                 </div>
                 <div class="feature-card__control">
@@ -353,7 +353,7 @@
                 </div>
                 <div class="data-action-row">
                     <div class="data-action-row__title">🗑 Clear All Data</div>
-                    <div class="data-action-row__desc">Remove all tracker data, link configuration, and checkpoint mappings. Feature settings are preserved. Cannot be undone.</div>
+                    <div class="data-action-row__desc">Remove all tracker data, link configuration, checkpoint mappings, and any saved rubric association snapshots. Feature settings are preserved. Cannot be undone.</div>
                     <button class="btn btn--danger" id="clearAllBtn">Clear everything</button>
                 </div>
             </div>
@@ -377,7 +377,7 @@
         </div>
         <div style="font-family:Lato,sans-serif;font-size:12px;color:#2d3b45;">
             <div style="margin-bottom:10px;color:#555;line-height:1.5;">
-                Rubric-to-checkpoint mappings saved by the Checkpoint Rubric Mapper feature. Each mapping is keyed by rubric ID and is reused for any assignment using that rubric within the same course.
+                Rubric-to-checkpoint mappings saved by the Checkpoint Rubric Mapper feature. Each mapping is keyed by rubric ID and is reused for any assignment that uses that rubric.
             </div>
             <div style="margin-bottom:12px;">
                 <button class="btn btn--danger" id="clearAllMappingsBtn" style="width:100%;">🗑 Clear All Mappings</button>
@@ -464,10 +464,10 @@
         <div style="color:#555;margin-bottom:12px;">Controls which quick-access links appear beneath each course in the Admin course search results. Toggle links on or off, and use the ↑ and ↓ buttons to change their order.</div>
 
         <div style="border-top:1px solid #e8eaec;padding-top:12px;font-weight:700;margin-bottom:4px;">💾 Data tab</div>
-        <div style="color:#555;margin-bottom:12px;">Manage your Canvas Pro-Tools data by category. Tracker, Links, and Mappings can each be exported or cleared on their own, and Settings can be exported. Importing is done through Full Backup: the file is inspected first, then you choose which categories to restore. Clear All removes tracker data, links, and mappings for this Canvas instance, but never your feature settings.</div>
+        <div style="color:#555;margin-bottom:12px;">Manage your Canvas Pro-Tools data by category. Tracker, Links, and Mappings can each be exported or cleared on their own, and Settings can be exported. Importing is done through Full Backup: the file is inspected first, then you choose which categories to restore. Clear All removes tracker data, links, mappings, and any saved rubric association snapshots for this Canvas instance, but never your feature settings. Rubric association snapshots saved by Rubrics+ are not included in exports or backups, and are kept until you restore that rubric or use Clear All.</div>
 
         <div style="border-top:2px solid #c7cdd1;padding-top:12px;font-weight:700;margin-bottom:4px;color:#0770a3;">📊 Gradebook Review Tracker</div>
-        <div style="color:#555;margin-bottom:12px;">Enable tracking on any course by opening its gradebook and toggling the tracker from the ▾ menu. Right-click any grade cell to set a review status, or right-click a column header to mark all visible students at once. Status markers also appear in the submission tray and SpeedGrader, and sync back to the gradebook automatically.</div>
+        <div style="color:#555;margin-bottom:12px;">Enable tracking on any course by opening its gradebook and toggling the tracker from the ▾ menu. Click the status indicator on the left side of any grade cell to set a review status, or click the ≡ button in a column header to mark all visible students at once. Status markers also appear in the submission tray and SpeedGrader, and sync back to the gradebook automatically.</div>
 
         <div style="border-top:1px solid #e8eaec;padding-top:12px;font-weight:700;margin-bottom:4px;">⚡ SpeedGrader</div>
         <div style="color:#555;margin-bottom:12px;">A Review Status badge appears in the grade area. Click it to mark the current student. The badge updates as you navigate between students and syncs back to the gradebook.</div>
@@ -476,10 +476,10 @@
         <div style="color:#555;margin-bottom:12px;">Color-codes quiz navigation links by question status: pale yellow = unanswered, light pink = incorrect, light purple = needs manual review (essay, short answer, or fill-in-multiple-blanks). Works in both SpeedGrader and the standalone quiz history view.</div>
 
         <div style="border-top:1px solid #e8eaec;padding-top:12px;font-weight:700;margin-bottom:4px;">📋 Rubrics+</div>
-        <div style="color:#555;margin-bottom:12px;">When you open the Find a Rubric dialog, the current course floats to the top of the list and term information is added to each entry. An Export CSV button appears on individual rubric pages, assignments, discussions, and quizzes — click it to download the rubric as a spreadsheet-ready CSV file. On quiz pages the CSV opens in a new tab instead of downloading directly, so allow pop-ups for your Canvas site if nothing appears. On the course Rubrics list page, each rubric row has a persistent download icon (between the edit and delete icons) to export that rubric directly. The sidebar also adds four buttons: Import Rubric to upload a CSV and create a new rubric in the course; Download Template to get a blank CSV pre-formatted for import; Export All Rubrics to download every rubric in the course as a single CSV file; and Load Rubric Details to show each rubric's context, assignment associations, and outcome criteria. When importing a multi-rubric CSV, Canvas creates each rubric separately using the Rubric Name column to distinguish them. On an assignment, a badge flags whether the attached rubric is actually used for grading, and an individual rubric page gains an associations report listing everything that rubric is attached to.</div>
+        <div style="color:#555;margin-bottom:12px;">When you open the Find a Rubric dialog, the current course floats to the top of the list and term information is added to each entry. An Export CSV button appears on individual rubric pages, assignments, discussions, and quizzes — click it to download the rubric as a spreadsheet-ready CSV file. On quiz pages the CSV opens in a new tab instead of downloading directly, so allow pop-ups for your Canvas site if nothing appears. On the course Rubrics list page, each rubric row has a persistent download icon (between the edit and delete icons) to export that rubric directly. The sidebar also adds four buttons: Import Rubric to upload a CSV and create a new rubric in the course; Download Template to get a blank CSV pre-formatted for import; Export All Rubrics to download every rubric in the course as a single CSV file; and Load Rubric Details to show each rubric's context, assignment associations, and outcome criteria. When importing a multi-rubric CSV, Canvas creates each rubric separately using the Rubric Name column to distinguish them. On an assignment, a badge flags whether the attached rubric is actually used for grading, and an individual rubric page gains an associations report listing everything that rubric is attached to. Canvas hides Edit on a rubric attached to more than one assignment. On that rubric's page, click Unlock rubric for editing: your Assignment associations are saved in your browser, all but the first are removed, and the page refreshes so Edit appears. After you edit and save the rubric, click Restore associations to re-attach them. Restore can be retried if it is interrupted, and afterward the page compares each assignment's points with what they were before. Only assignment associations are changed.</div>
 
         <div style="border-top:1px solid #e8eaec;padding-top:12px;font-weight:700;margin-bottom:4px;">📝 Assignment Details</div>
-        <div style="color:#555;margin-bottom:12px;">On the course Assignments page, open the ⋮ options menu at the top and choose "Load assignment details". Each assignment is then annotated in place with its submission type, whether it counts toward the final grade, its attached rubric (linked, with whether that rubric is used for grading and any outcome criteria), and whether Turnitin is enabled. Nothing is changed on the page until you run it.</div>
+        <div style="color:#555;margin-bottom:12px;">On the course Assignments page, open the ⋮ options menu at the top and choose "Load assignment details". Each assignment is then annotated in place with its submission type, whether it counts toward the final grade, its attached rubric (linked, with whether that rubric is used for grading and any outcome criteria). External tool assignments show the tool's name, and Classic and New Quizzes are labeled. Nothing is changed on the page until you run it.</div>
 
         <div style="border-top:1px solid #e8eaec;padding-top:12px;font-weight:700;margin-bottom:4px;">🕐 Graded At Timestamp</div>
         <div style="color:#555;margin-bottom:12px;">Displays when a submission was graded and whether it was graded manually or auto-graded. Appears in the submission info area of SpeedGrader.</div>
@@ -497,7 +497,7 @@
         <div style="color:#555;margin-bottom:12px;">Adds quick-access links beneath each course in the Admin course search results page. Configure which links appear and their order in the 🔗 Links tab.</div>
 
         <div style="border-top:1px solid #e8eaec;padding-top:12px;font-weight:700;margin-bottom:4px;">🎓 User Enrollments</div>
-        <div style="color:#555;">On a user's page in Canvas, the Courses list gains a search box plus term and course-status filters, and is re-sorted so active enrollments come first. Within that, courses are grouped by Default Term, then Master Templates, then dated terms with the newest first. A count above the list shows how many enrollments are currently visible. Useful on accounts with long enrollment histories.</div>
+        <div style="color:#555;">On a user's page in Canvas, the Courses list gains a search box plus term and course-status filters, and is re-sorted so active enrollments come first. Within that, courses are grouped by Default Term, then named terms such as Master Templates, then dated terms (for example FA-26) with the newest first. A count above the list shows how many enrollments are currently visible. Useful on accounts with long enrollment histories.</div>
     </div>
 </div>
 

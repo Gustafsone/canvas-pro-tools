@@ -4,6 +4,10 @@ const STORAGE_KEY  = 'cpt_review_data';
 const FEATURES_KEY = 'cpt_features';
 const LINKS_KEY    = 'cpt_admin_links';
 const MAPPINGS_KEY = 'cpt_checkpoint_mappings';
+// Rubric Association Editor keys. Cleared by Clear All (to remove any stale
+// leftovers) but deliberately NOT part of any export or Full Backup.
+const ASSOC_SNAPSHOTS_KEY = 'cpt_rubric_assoc_snapshots';
+const ASSOC_NOTICES_KEY   = 'cpt_rubric_assoc_notices';
 
 // Single source of truth for the version string. Read from the manifest so
 // export payloads, the header label, and the About tab can never drift apart
@@ -466,7 +470,7 @@ document.querySelectorAll('.sub-tab').forEach(subTab => {
 const TAB_HELP_TEXT = {
     tools:   'Turn individual features on or off. Most changes take effect on the next page load.',
     tracker: 'Manage courses you\'ve enabled for review tracking. Use the Courses sub-tab for the global toggle and course list. Switch to the 🎨 States sub-tab to customize your review states.',
-    data:    'Manage your data by category. Tracker, Links, and Mappings can each be exported or cleared on their own, and Settings can be exported. Importing is done through Full Backup: load a backup file and choose which categories to restore. Clear All removes tracker data, links, and mappings for this Canvas instance, but never your feature settings.',
+    data:    'Manage your data by category. Tracker, Links, and Mappings can each be exported or cleared on their own, and Settings can be exported. Importing is done through Full Backup: load a backup file and choose which categories to restore. Clear All removes tracker data, links, mappings, and any saved rubric association snapshots for this Canvas instance, but never your feature settings. Snapshots are not included in exports or backups.',
 };
 
 let activeTabPopover = null;
@@ -1706,13 +1710,14 @@ document.getElementById('importAllBtn').addEventListener('click', () => {
 document.getElementById('clearAllBtn').addEventListener('click', async () => {
     const ok = await popupConfirm(
         'Clear All Data?',
-        'This removes all tracker data, link configuration, and checkpoint mappings. Feature settings are preserved. Cannot be undone.',
+        'This removes all tracker data, link configuration, checkpoint mappings, and any saved rubric association snapshots. Feature settings are preserved. Cannot be undone.',
         'Clear everything', true
     );
     if (!ok) return;
-    chrome.storage.local.get([STORAGE_KEY, LINKS_KEY, MAPPINGS_KEY], result => {
+    const CLEAR_ALL_KEYS = [STORAGE_KEY, LINKS_KEY, MAPPINGS_KEY, ASSOC_SNAPSHOTS_KEY, ASSOC_NOTICES_KEY];
+    chrome.storage.local.get(CLEAR_ALL_KEYS, result => {
         const updates = {};
-        [STORAGE_KEY, LINKS_KEY, MAPPINGS_KEY].forEach(key => {
+        CLEAR_ALL_KEYS.forEach(key => {
             const all = result[key] || {};
             delete all[CURRENT_INSTANCE];
             updates[key] = all;
