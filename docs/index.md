@@ -11,8 +11,8 @@ description: A Chrome extension that adds practical tools to the Canvas LMS inte
 A Chrome extension that adds practical tools to the Canvas LMS interface for instructors, deans, and administrators. Everything runs in your browser against the Canvas site you are already signed in to.
 {: .fs-6 .fw-300 }
 
-[Install the extension]({{ '/install/' | relative_url }}){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
-[Quick start]({{ '/quick-start/' | relative_url }}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2 }
+[Install the extension]({{ '/install.html/' | relative_url }}){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
+[Quick start]({{ '/quick-start.html/' | relative_url }}){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2 }
 [View on GitHub](https://github.com/Gustafsone/canvas-pro-tools){: .btn .fs-5 .mb-4 .mb-md-0 }
 
 {: .screenshot }
