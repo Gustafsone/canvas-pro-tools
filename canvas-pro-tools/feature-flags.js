@@ -15,10 +15,11 @@
     // Must stay in step with the FEATURES array in popup.js. These apply only
     // when a feature has never been toggled on this Canvas instance.
     //
-    // IMPORTANT: only three of these actually drive anything. The stamps for
-    // quizNav, rubricPlus, and assignmentDetails are read by quiz-nav.js,
-    // {rubric-exporter,rubric-info,rubric-sorter}.js, and assignment-details.js
-    // respectively. The other six are stamped but read by nobody — those
+    // IMPORTANT: only four of these actually drive anything. The stamps for
+    // quizNav, rubricPlus, assignmentDetails, and outcomeMap are read by
+    // quiz-nav.js, {rubric-exporter,rubric-info,rubric-sorter}.js,
+    // assignment-details.js, and outcome-map.js respectively. The other six
+    // are stamped but read by nobody — those
     // features check chrome.storage directly in their own content scripts, and
     // THAT is where their effective default lives:
     //   reviewTracker    -> gradebook-tracker.js, speedgrader.js
@@ -35,6 +36,7 @@
         quizNav:          true,
         rubricPlus:       true,
         assignmentDetails: true,
+        outcomeMap:       true,
         sgAvatarZoom:     false,
         sgGradedAt:       true,
         adminCourseLinks: false,
@@ -65,6 +67,7 @@
         html.dataset.cptQuizNav          = features.quizNav          ? 'true' : 'false';
         html.dataset.cptRubricPlus       = features.rubricPlus       ? 'true' : 'false';
         html.dataset.cptAssignmentDetails = features.assignmentDetails ? 'true' : 'false';
+        html.dataset.cptOutcomeMap       = features.outcomeMap       ? 'true' : 'false';
         html.dataset.cptReviewTracker    = features.reviewTracker    ? 'true' : 'false';
         html.dataset.cptSgAvatarZoom     = features.sgAvatarZoom     ? 'true' : 'false';
         html.dataset.cptSgGradedAt       = features.sgGradedAt       ? 'true' : 'false';

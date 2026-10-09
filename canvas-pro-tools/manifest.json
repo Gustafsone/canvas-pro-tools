@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Canvas Pro-Tools",
-  "version": "4.1.0",
-  "description": "Gradebook review tracking, SpeedGrader tweaks, quiz navigation, and rubric enhancements for Canvas LMS instructors.",
+  "version": "4.2.0",
+  "description": "Gradebook review tracking, SpeedGrader tweaks, quiz navigation, rubric enhancements, and outcome maps for Canvas LMS instructors.",
   "permissions": [
     "storage",
     "activeTab"
@@ -61,7 +61,8 @@
         "https://*.instructure.com/courses/*/quizzes/*",
         "https://*.instructure.com/courses/*/discussion_topics/*",
         "https://*.instructure.com/courses/*/rubrics",
-        "https://*.instructure.com/courses/*/rubrics/*"
+        "https://*.instructure.com/courses/*/rubrics/*",
+        "https://*.instructure.com/courses/*/outcomes"
       ],
       "exclude_matches": [
         "https://*.instructure.com/courses/*/quizzes/*/history",
@@ -124,6 +125,13 @@
         "https://*.instructure.com/courses/*/discussion_topics/*"
       ],
       "js": ["cpt-instance.js", "rubric-checkpoint-mapper.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://*.instructure.com/courses/*/outcomes"
+      ],
+      "js": ["cpt-panel.js", "outcome-map.js"],
       "run_at": "document_idle"
     }
   ],

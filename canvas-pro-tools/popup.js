@@ -52,6 +52,7 @@ const FEATURES = [
     { id: 'quizNav',          default: true  },
     { id: 'rubricPlus',       default: true  },
     { id: 'assignmentDetails', default: true },
+    { id: 'outcomeMap',       default: true  },
     { id: 'sgAvatarZoom',     default: false },
     { id: 'sgGradedAt',       default: true  },
     { id: 'adminCourseLinks', default: false },
