@@ -3,7 +3,7 @@ title: Outcome Map
 parent: Features
 nav_order: 4
 permalink: /features/outcome-map/
-description: See every course outcome and the assignments and question banks aligned to it in one view, then clean up duplicates and leftovers.
+description: See every course outcome and the assignments, quizzes, and question banks aligned to it in one view, then clean up duplicates and leftovers.
 ---
 
 # Outcome Map
@@ -26,25 +26,27 @@ The map only reads from Canvas. It never changes anything and saves nothing.
 1. Open a course's **Outcomes** page.
 2. Click **Outcome Map**, next to **Find**. The map opens in a new tab, so the Outcomes page stays open in the first one.
 
-The map appears in a few seconds. It then reads the course's Classic Quiz question banks, and a status line counts them off. A course with many question banks can take a little longer at this step, because each bank is read separately.
+The map appears in a few seconds. It then reads the course's Classic Quiz question banks. If any bank is aligned to an outcome, it also checks the course's Classic Quizzes to see which banks each quiz draws questions from. A progress bar under the status line shows each step, such as "Reading question banks: 6 of 19" or "Checking quizzes: 30 of 44". A course with many banks and quizzes can take a little longer, because each one is read separately.
 
 {: .screenshot }
 > [SCREENSHOT: the Outcome Map button next to Find on the Outcomes page]
 
 ## Read the map
 
-Assignments run down the side, grouped by assignment group. Outcomes run across the top, grouped by outcome group. Question banks aligned to an outcome get their own rows at the bottom.
+Assignments run down the side, grouped by assignment group. Outcomes run across the top, grouped by outcome group. Question banks aligned to an outcome get their own rows at the bottom, each showing which quizzes use it, or **Not used by any quiz**.
+
+A Classic Quiz that draws questions from an aligned bank gets marks for that bank's outcomes on its own row, with a **Quiz** badge, so you can see which quizzes assess which outcomes.
 
 | Mark | Meaning |
 |---|---|
-| ● | A rubric criterion on the assignment, or the question bank, is aligned to that outcome |
+| ● | A rubric criterion on the assignment, a question bank the quiz draws from, or the question bank itself is aligned to that outcome |
 | ○ | Only in courses that mix both kinds: a tracked-only criterion (see Grading below) |
 | **Inst.** | An Institution outcome, created at the account level |
 | **Course** | An outcome created in this course |
 | **Other** | An outcome created in a different course and copied in |
 | ⚑ | An outcome the map suggests you likely remove (see the Cleanup tab) |
 
-A key above the map shows the marks that appear in your course. Hover a column header for the full outcome title, description, and ID. Hover a mark for the rubric and criterion, or the question bank and its mastery percentage.
+A key above the map shows the marks that appear in your course. Hover a column header for the full outcome title, description, and ID. Hover a mark for the rubric and criterion, or the question bank and its mastery percentage. On a quiz row, the hover text says how many questions the quiz draws from which bank, for example "Draws 4 questions (3 pts each) from bank Course Objective 1".
 
 Totals show how many outcomes each assignment covers and how many assignments and question banks assess each outcome. When two outcomes in the same group share a number, they are labeled 1a, 1b, and so on.
 
@@ -63,7 +65,7 @@ Assignment rows can carry small badges: **Unpublished**, **No rubric**, **Rubric
 
 ## Clean up outcomes
 
-The **Cleanup** tab waits until every question bank has been read, so an outcome assessed only through a quiz bank is never reported as unused.
+The **Cleanup** tab waits until the question banks and quizzes have been read, so an outcome assessed only through a quiz bank is never reported as unused.
 
 It starts with a **suggested fix order**:
 
@@ -80,7 +82,8 @@ Then it lists:
 - **Outcomes not used by any assignment or question bank.**
 - **Outcomes that may belong to another course:** course-level outcomes created in a different course, and outcomes whose description names a different course code.
 - **Rubrics not attached to any assignment that carry outcomes.** Canvas still lists these as alignments, which is why its own Outcomes page looks cluttered.
-- **Assignments with no outcome.**
+- **Assignments with no outcome.** A Classic Quiz that draws from an aligned bank is not listed here.
+- **Aligned question banks no quiz uses:** these never record outcome results.
 - **Duplicate rubric copies**, such as a rubric and its "(1)" copy.
 - **Outcomes on rubrics or question banks but not in this course.**
 - **More than one outcome group in use.**
@@ -109,7 +112,7 @@ These are suggestions, not decisions. If the outcome is still used, move those a
 
 - Works on the classic Outcomes page.
 - Reads only question banks that belong to the course. New Quizzes item banks are not included.
-- Does not show which quizzes draw from each question bank.
+- Quiz links come from each quiz's question groups. A group of hand-picked questions is not linked, and a group that draws from a bank stored outside the course is counted in the notes but not mapped.
 - Possible duplicates and course-code mismatches are found by matching text, so review them before removing anything.
 
 [Previous: Admin and dean tools]({{ '/features/admin/' | relative_url }}){: .mr-4 }
