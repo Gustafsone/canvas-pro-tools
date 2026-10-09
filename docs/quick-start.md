@@ -18,7 +18,7 @@ Three steps from install to your first useful feature.
 
 ## What is on by default
 
-Five features start on. The other five need setup, serve a narrower audience, or are a matter of preference, so they start off. These defaults come from the extension source, version 4.1.0.
+Six features start on. The other five need setup, serve a narrower audience, or are a matter of preference, so they start off. These defaults come from the extension source, version 4.2.0.
 
 | Feature | Grouped under | Default |
 |---|---|---|
@@ -27,6 +27,7 @@ Five features start on. The other five need setup, serve a narrower audience, or
 | Rubrics+ | Everyone | On |
 | Assignment Details | Everyone | On |
 | Checkpoint Rubric Mapper | Everyone | Off |
+| Outcome Map | Everyone | On |
 | Quiz Nav and Highlighting | SpeedGrader tweaks | On |
 | Graded At Timestamp | SpeedGrader tweaks | On |
 | Avatar Zoom | SpeedGrader tweaks | Off |

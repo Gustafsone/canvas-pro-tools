@@ -22,7 +22,7 @@ Common problems and what to try. If none of these help, see [How do I report a p
 
 ### Where each feature runs
 
-Each feature only acts on the Canvas pages listed here. These come from the extension's manifest for version 4.1.0.
+Each feature only acts on the Canvas pages listed here. These come from the extension's manifest for version 4.2.0.
 
 | Feature | Canvas pages |
 |---|---|
@@ -31,6 +31,7 @@ Each feature only acts on the Canvas pages listed here. These come from the exte
 | Rubrics+ | Rubric pages and the Rubrics list, plus assignments, quizzes, and discussions. The Rubric Association Editor runs on an individual rubric page only |
 | Assignment Details | The course Assignments list only (`/courses/…/assignments`) |
 | Checkpoint Rubric Mapper | Discussions, rubric pages, the Rubrics list, and SpeedGrader |
+| Outcome Map | The course Outcomes page (`/courses/…/outcomes`), which adds the Outcome Map button; the map opens in a new tab |
 | Quiz Nav and Highlighting | A quiz's submission history page, including inside SpeedGrader |
 | Graded At Timestamp | SpeedGrader |
 | Avatar Zoom | SpeedGrader |

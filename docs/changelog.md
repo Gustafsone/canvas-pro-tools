@@ -10,11 +10,18 @@ description: What changed in each Canvas Pro-Tools release.
 {: .confirm }
 > This draft is built from the version number in the manifest and from comments in the source code, not from real release notes. Add release dates and replace or extend the entries with your own notes. Releases before 4.0.0 are not listed.
 
-## 4.1.0
+## 4.2.0
 {: .d-inline-block }
 
 Current version
 {: .label .label-green }
+
+{: .confirm }
+> Release date.
+
+- **New:** Outcome Map, on by default. An Outcome Map button on the course Outcomes page opens a read-only map of every outcome and the assignments and Classic Quiz question banks aligned to it, with a Cleanup tab, CSV export, and print. See [Outcome Map]({{ '/features/outcome-map/' | relative_url }}).
+
+## 4.1.0
 
 {: .confirm }
 > Release date.
