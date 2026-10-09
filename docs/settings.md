@@ -68,5 +68,5 @@ The Review Tracker control in the gradebook has its own menu with **Tips & Help*
 
 Shows the installed version and credits the authors whose work some features are adapted from. See [Credits]({{ '/credits/' | relative_url }}).
 
-[Previous: Admin and dean tools]({{ '/features/admin/' | relative_url }}){: .mr-4 }
+[Previous: Outcome Map]({{ '/features/outcome-map/' | relative_url }}){: .mr-4 }
 [Next: Your data and privacy]({{ '/privacy/' | relative_url }})

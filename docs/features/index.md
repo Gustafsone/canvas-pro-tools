@@ -8,7 +8,7 @@ description: Every Canvas Pro-Tools feature, grouped by who it helps, with its d
 
 # Features
 
-Canvas Pro-Tools has ten features. Each one can be switched on or off in the **Tools** tab of the toolbar popup, and each has a short Tips and Help section in the popup too.
+Canvas Pro-Tools has eleven features. Each one can be switched on or off in the **Tools** tab of the toolbar popup, and each has a short Tips and Help section in the popup too.
 
 | Feature | What it does | Default | Guide |
 |---|---|---|---|
@@ -17,6 +17,7 @@ Canvas Pro-Tools has ten features. Each one can be switched on or off in the **T
 | Rubrics+ | Rubric sorting, CSV export and import, details, and editing of locked rubrics. | On | [For everyone]({{ '/features/everyone/' | relative_url }}) |
 | Assignment Details | Annotate the assignments list with submission type, grade impact, and rubric. | On | [For everyone]({{ '/features/everyone/' | relative_url }}) |
 | Checkpoint Rubric Mapper | Map rubric criteria to discussion checkpoints so SpeedGrader fills in the checkpoint grades. | Off | [For everyone]({{ '/features/everyone/' | relative_url }}) |
+| Outcome Map | See every outcome and the assignments and question banks aligned to it, and clean up duplicates and leftovers. | On | [Outcome Map]({{ '/features/outcome-map/' | relative_url }}) |
 | Quiz Nav and Highlighting | Color-code quiz navigation links by question status. | On | [In SpeedGrader]({{ '/features/speedgrader/' | relative_url }}) |
 | Graded At Timestamp | Show when a submission was graded and whether it was manual or automatic. | On | [In SpeedGrader]({{ '/features/speedgrader/' | relative_url }}) |
 | Avatar Zoom | Hover a student's avatar in SpeedGrader to zoom it. | Off | [In SpeedGrader]({{ '/features/speedgrader/' | relative_url }}) |

@@ -60,4 +60,4 @@ Makes a long Courses list on a user's page easier to use. It adds a course name 
 The tool works only with what is already on the page and makes no extra requests to Canvas. It covers the search box and the two filters from the original it was adapted from. See [Credits]({{ '/credits/' | relative_url }}).
 
 [Previous: In SpeedGrader]({{ '/features/speedgrader/' | relative_url }}){: .mr-4 }
-[Next: Settings and data]({{ '/settings/' | relative_url }})
+[Next: Outcome Map]({{ '/features/outcome-map/' | relative_url }})
