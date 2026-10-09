@@ -29,9 +29,13 @@
 // outcome_group_links, assignment_groups, assignments, rubrics. The map is
 // drawn right away. Phase 2: the course's Classic Quiz question banks, read
 // four at a time from each bank's own page (the only place Canvas exposes a
-// bank's aligned outcomes). Cleanup checks and the "used" counts wait for
-// phase 2, so an outcome assessed only through a quiz bank is never shown as
-// unused or Likely remove.
+// bank's aligned outcomes). Phase 3, only when a bank is aligned to an
+// outcome: the Classic Quiz list, a Quiz Questions call per quiz (six at a
+// time), and the edit page of each quiz that draws questions from banks (four
+// at a time), to learn which banks each quiz pulls from. A progress bar tracks
+// phases 2 and 3. Cleanup checks and the "used" counts wait for both, so an
+// outcome assessed only through a quiz bank is never shown as unused or
+// Likely remove.
 //
 // READ-ONLY. Same-origin GET requests only. Nothing in Canvas is changed and
 // nothing is written to chrome.storage. No student data (submissions, scores,
@@ -54,6 +58,13 @@
 //     40.7 s one at a time, hence phase 2 with four in flight
 //   - outcome_alignments?assignment_id=<quiz> returns nothing for bank-based
 //     quizzes, and GraphQL LearningOutcome.alignments is null here
+//   - Classic Quizzes that draw from banks return fewer questions from the
+//     Quiz Questions API than their question_count (41902: Final Exam 40 vs 0;
+//     14 homework quizzes matched exactly), so only those need an edit page.
+//     On the edit page each .group_top is followed by
+//     div.assessment_question_bank > a.bank_name_link[href=.../question_banks/ID];
+//     the group's hidden bank_id input is empty. .pick_count and
+//     .question_points sit inside .group_top. Edit pages are 176-294 KB.
 //   - contributing_scores is deliberately NOT used: it returns student scores
 //   - Outcomes page CSP is frame-ancestors only, so Blob downloads work
 //   - Toolbar is div.toolbar.outcomes-toolbar; Find is button.find_outcome
@@ -91,6 +102,8 @@
     var PER_PAGE          = 100;
     var MAX_PAGES         = 50;
     var BANK_CONCURRENCY  = 4;
+    var QUIZ_CHECK_CONCURRENCY = 6;   // light JSON calls
+    var QUIZ_EDIT_CONCURRENCY  = 4;   // heavy HTML pages
     var BANK_ALIGNED_SEL  = '#aligned_outcomes_list li.outcome:not(.blank)';
 
     // Possible-duplicate threshold: Jaccard similarity of content words, with
@@ -210,12 +223,22 @@
                 var model = buildModel(raw);
                 state.model = model;
                 renderAll(ui, model);
-                return loadBanks(model, function (done, total) {
+                setStatus(ui, 'Map ready. Checking question banks and quizzes... Cleanup results appear when this finishes.', true);
+                var progress = function (label, done, total) {
                     if (token !== state.runToken) return;
-                    setStatus(ui, 'Map ready. Checking question banks: ' + done + ' of ' + total +
-                        '... Cleanup results appear when this finishes.', true);
+                    setProgress(ui, label, done, total);
+                };
+                return loadBanks(model, function (done, total) {
+                    progress('Reading question banks', done, total);
+                }).then(function () {
+                    if (token !== state.runToken) return null;
+                    // Phase 3 only matters when some bank is aligned to an outcome.
+                    var anyAligned = model.banks.list.some(function (b) { return b.outcomes.length; });
+                    if (!anyAligned) { model.quizzes.state = 'skipped'; return null; }
+                    return loadQuizzes(model, progress);
                 }).then(function () {
                     if (token !== state.runToken) return;
+                    hideProgress(ui);
                     finishModel(model);
                     renderAll(ui, model);
                     setBusy(ui, false);
@@ -231,6 +254,7 @@
             })
             .catch(function (err) {
                 if (token !== state.runToken) return;
+                hideProgress(ui);
                 setBusy(ui, false);
                 showError(ui, err);
             });
@@ -293,6 +317,13 @@
         ]);
 
         var status = el('div', { class: 'status no-print', role: 'status', 'aria-live': 'polite' });
+
+        // Progress bar for the slow steps (question banks, then quizzes). A
+        // native <progress> element is announced as a progress bar by screen
+        // readers; the label names the current step.
+        var progLabel = el('div', { class: 'prog-label', id: 'om-prog-label' });
+        var progBar = el('progress', { class: 'prog-bar', max: '1', value: '0', 'aria-labelledby': 'om-prog-label' });
+        var progWrap = el('div', { class: 'prog no-print', hidden: true }, [progLabel, progBar]);
         var tiles = el('section', { class: 'tiles', 'aria-label': 'Summary' });
 
         var tabMap = el('button', { type: 'button', role: 'tab', id: 'om-tab-map', 'aria-controls': 'om-panel-map', 'aria-selected': 'true', class: 'tab', text: 'Map' });
@@ -304,6 +335,7 @@
 
         page.appendChild(header);
         page.appendChild(status);
+        page.appendChild(progWrap);
         page.appendChild(tiles);
         page.appendChild(tablist);
         page.appendChild(panelMap);
@@ -334,6 +366,7 @@
 
         var ui = {
             root: root, page: page, courseEl: courseEl, status: status, tiles: tiles,
+            progWrap: progWrap, progLabel: progLabel, progBar: progBar,
             tabClean: tabClean, panelMap: panelMap, panelClean: panelClean,
             btnRefresh: btnRefresh, btnMap: btnMap, btnClean: btnClean, btnPrint: btnPrint
         };
@@ -351,6 +384,15 @@
 
         return ui;
     }
+
+    function setProgress(ui, label, done, total) {
+        ui.progWrap.hidden = false;
+        ui.progLabel.textContent = label + ': ' + done + ' of ' + total;
+        ui.progBar.max = Math.max(total, 1);
+        ui.progBar.value = Math.min(done, Math.max(total, 1));
+    }
+
+    function hideProgress(ui) { ui.progWrap.hidden = true; }
 
     function setBusy(ui, busy) {
         ui.btnRefresh.disabled = busy;
@@ -485,6 +527,74 @@
             });
     }
 
+    // Phase 3: which question banks each Classic Quiz draws from. Only quizzes
+    // whose Quiz Questions API count falls short of question_count draw from
+    // banks, so only those edit pages are read. The edit page is read with a
+    // plain GET; nothing is submitted.
+    function loadQuizzes(model, onProgress) {
+        var q = model.quizzes;
+        q.state = 'loading';
+        return getAll('/api/v1/courses/' + courseId + '/quizzes?per_page=' + PER_PAGE)
+            .then(function (list) {
+                q.list = list.filter(function (x) { return x && x.id != null; }).map(function (x) {
+                    return {
+                        id: String(x.id), title: (x.title || ('Quiz ' + x.id)).trim(),
+                        assignmentId: x.assignment_id != null ? String(x.assignment_id) : null,
+                        url: '/courses/' + courseId + '/quizzes/' + x.id,
+                        questionCount: x.question_count || 0,
+                        drawsFromBanks: false, groups: [], error: null
+                    };
+                });
+                var done = 0;
+                onProgress('Checking quizzes', 0, q.list.length);
+                return pool(q.list, QUIZ_CHECK_CONCURRENCY, function (quiz) {
+                    return getAll('/api/v1/courses/' + courseId + '/quizzes/' + quiz.id + '/questions?per_page=' + PER_PAGE)
+                        .then(function (qs) { quiz.drawsFromBanks = qs.length < quiz.questionCount; })
+                        .catch(function (err) { quiz.error = (err && err.status) ? 'HTTP ' + err.status : 'could not be read'; })
+                        .then(function () { done++; onProgress('Checking quizzes', done, q.list.length); });
+                });
+            })
+            .then(function () {
+                var targets = q.list.filter(function (x) { return x.drawsFromBanks; });
+                var done = 0;
+                onProgress('Reading quiz question groups', 0, targets.length);
+                return pool(targets, QUIZ_EDIT_CONCURRENCY, function (quiz) {
+                    return fetch(quiz.url + '/edit', { credentials: 'same-origin' })
+                        .then(function (r) {
+                            if (!r.ok) throw new HttpError(r.status, 'Quiz page failed');
+                            return r.text();
+                        })
+                        .then(function (html) {
+                            var doc = new DOMParser().parseFromString(html, 'text/html');
+                            doc.querySelectorAll('.group_top:not(#group_top_template)').forEach(function (g) {
+                                var next = g.nextElementSibling;
+                                var link = next && next.classList.contains('assessment_question_bank')
+                                    ? next.querySelector('a.bank_name_link[href*="question_banks/"]') : null;
+                                if (!link) return; // a group of hand-picked questions, not a bank
+                                var href = link.getAttribute('href') || '';
+                                var m = /\/(courses|accounts)\/(\d+)\/question_banks\/(\d+)/.exec(href);
+                                if (!m) return;
+                                var pick = g.querySelector('.pick_count');
+                                var pts = g.querySelector('.question_points');
+                                quiz.groups.push({
+                                    bankId: m[3], bankTitle: (link.textContent || '').trim(), bankUrl: href,
+                                    inCourse: m[1] === 'courses' && m[2] === courseId,
+                                    pick: pick ? (pick.textContent || '').trim() : '',
+                                    points: pts ? (pts.textContent || '').trim() : ''
+                                });
+                            });
+                        })
+                        .catch(function (err) { quiz.error = (err && err.status) ? 'HTTP ' + err.status : 'could not be read'; })
+                        .then(function () { done++; onProgress('Reading quiz question groups', done, targets.length); });
+                });
+            })
+            .then(function () { q.state = 'done'; })
+            .catch(function (err) {
+                q.state = 'error';
+                q.error = (err && err.status) ? 'HTTP ' + err.status : 'could not be read';
+            });
+    }
+
     // Run fn over items with at most `limit` promises in flight.
     function pool(items, limit, fn) {
         var i = 0;
@@ -507,6 +617,7 @@
             assignmentGroups: [], assignments: [], rubrics: [],
             unlinked: {}, cleanup: null,
             banks: { state: 'pending', list: [], error: null },
+            quizzes: { state: 'pending', list: [], error: null },
             blueprint: { role: null, parent: null },
             scoring: { total: 0, tracked: 0 }
         };
@@ -599,7 +710,9 @@
                 rubricTitle: (rs && rs.title) || '',
                 useRubricForGrading: a.use_rubric_for_grading !== false,
                 locked: a.restricted_by_master_course === true,
-                aligned: aligned
+                isQuiz: a.quiz_id != null || a.is_quiz_assignment === true,
+                aligned: aligned,
+                bankAligned: {}   // outcomeId -> [{ bank, group }], filled after phase 3
             };
             model.assignments.push(rec);
             var ag = agById[rec.groupId];
@@ -662,6 +775,8 @@
     // After phase 2: attach bank alignments, then run the Cleanup checks.
     function finishModel(model) {
         model.banks.list.forEach(function (bank) {
+            bank.quizIds = [];
+            bank.quizTitles = [];
             bank.outcomes.forEach(function (bo) {
                 var o = model.outcomeById[bo.id];
                 if (o) {
@@ -671,6 +786,31 @@
                 }
             });
         });
+
+        // Quiz -> bank -> outcome. A quiz that draws from an aligned bank gets
+        // that bank's outcomes on its assignment row, and counts as an
+        // assignment using the outcome.
+        var bankById = {};
+        model.banks.list.forEach(function (b) { bankById[b.id] = b; });
+        var asgById = {};
+        model.assignments.forEach(function (a) { asgById[a.id] = a; });
+        model.quizzes.outOfCourseGroups = 0;
+        model.quizzes.list.forEach(function (quiz) {
+            var a = quiz.assignmentId ? asgById[quiz.assignmentId] : null;
+            quiz.groups.forEach(function (g) {
+                if (!g.inCourse) { model.quizzes.outOfCourseGroups++; return; }
+                var bank = bankById[g.bankId];
+                if (!bank) return;
+                if (bank.quizIds.indexOf(quiz.id) < 0) { bank.quizIds.push(quiz.id); bank.quizTitles.push(quiz.title); }
+                if (!a) return;
+                bank.outcomes.forEach(function (bo) {
+                    (a.bankAligned[bo.id] = a.bankAligned[bo.id] || []).push({ bank: bank, group: g, mastery: bo.mastery });
+                    var o = model.outcomeById[bo.id];
+                    if (o && o.assignmentIds.indexOf(a.id) < 0) o.assignmentIds.push(a.id);
+                });
+            });
+        });
+
         model.cleanup = buildCleanup(model);
     }
 
@@ -915,8 +1055,10 @@
         // 4. Assignments with no outcome
         var noOutcome = [];
         model.assignments.forEach(function (a) {
+            if (Object.keys(a.bankAligned).length) return; // outcomes come through its question banks
             if (!a.hasRubric) {
-                noOutcome.push({ type: 'Assignment', id: a.id, name: a.name, url: abs(a.url), detail: 'No rubric' + (a.published ? '' : ' · unpublished') });
+                noOutcome.push({ type: a.isQuiz ? 'Quiz' : 'Assignment', id: a.id, name: a.name, url: abs(a.url),
+                    detail: (a.isQuiz ? 'Classic Quiz with no rubric and no questions drawn from an aligned bank' : 'No rubric') + (a.published ? '' : ' · unpublished') });
             } else if (!Object.keys(a.aligned).length) {
                 noOutcome.push({ type: 'Assignment', id: a.id, name: a.name, url: abs(a.url), detail: 'Rubric "' + a.rubricTitle + '" has no outcome criteria' + (a.published ? '' : ' · unpublished') });
             }
@@ -924,9 +1066,27 @@
         sections.push({
             key: 'noOutcome', title: 'Assignments with no outcome',
             help: 'Assignments with no rubric, or with a rubric that has no outcome criteria. Some may be intentional (practice work, external tools, ' +
-                  'or Classic Quizzes that draw from an aligned question bank, which appear in the map\'s Question banks rows).',
+                  'or Classic Quizzes whose questions are not drawn from an aligned question bank).',
             count: noOutcome.length, items: noOutcome
         });
+
+        // 4b. Aligned banks no quiz draws from (only known after phase 3)
+        if (model.quizzes.state === 'done') {
+            var idleBanks = model.banks.list.filter(function (b) { return b.outcomes.length && !b.quizIds.length; }).map(function (b) {
+                return {
+                    type: 'Question bank', id: b.id, name: b.title, url: abs(b.url),
+                    detail: 'Aligned to ' + b.outcomes.map(function (bo) {
+                        var o = model.outcomeById[bo.id];
+                        return o ? 'outcome ' + o.label + ' (' + bo.id + ')' : 'outcome ' + bo.id;
+                    }).join(', ') + ', but no Classic Quiz in this course draws questions from it'
+                };
+            });
+            sections.push({
+                key: 'idleBanks', title: 'Aligned question banks no quiz uses',
+                help: 'These banks are aligned to outcomes, but no quiz pulls questions from them, so they never record outcome results.',
+                count: idleBanks.length, items: idleBanks
+            });
+        }
 
         // 5. Duplicate rubric copies
         var byTitle = {};
@@ -1071,6 +1231,14 @@
         } else {
             bankLine = 'question banks are still loading';
         }
+        var qz = model.quizzes;
+        if (qz.state === 'done') {
+            var drawing = qz.list.filter(function (x) { return x.groups.length; }).length;
+            bankLine += '; ' + plural(qz.list.length, 'Classic Quiz', 'Classic Quizzes') + ' checked, ' + drawing + ' drawing questions from banks' +
+                (qz.outOfCourseGroups ? ' (' + plural(qz.outOfCourseGroups, 'question group') + ' draw from banks outside this course and are not mapped)' : '');
+        } else if (qz.state === 'error') {
+            bankLine += '; quizzes could not be read (' + qz.error + ')';
+        }
         notes.appendChild(el('p', { class: 'note' }, [
             el('strong', { text: 'What this map includes: ' }),
             'rubrics on assignments, and Classic Quiz question banks that belong to this course (' + bankLine + '). ' +
@@ -1170,7 +1338,8 @@
                 var tr = el('tr');
                 var badges = [];
                 if (!a.published) badges.push(el('span', { class: 'badge', text: 'Unpublished' }));
-                if (!a.hasRubric) badges.push(el('span', { class: 'badge', text: 'No rubric' }));
+                if (a.isQuiz) badges.push(el('span', { class: 'badge', text: 'Quiz' }));
+                if (!a.hasRubric && !a.isQuiz) badges.push(el('span', { class: 'badge', text: 'No rubric' }));
                 if (a.hasRubric && !a.useRubricForGrading) badges.push(el('span', { class: 'badge', text: 'Rubric not used for grading' }));
                 if (a.locked && bp === 'child') badges.push(el('span', { class: 'badge lock', text: 'Locked by Blueprint' }));
                 if (a.locked && bp === 'master') badges.push(el('span', { class: 'badge lock', text: 'Locked in associated courses' }));
@@ -1180,6 +1349,20 @@
                 var n = 0;
                 cols.forEach(function (c) {
                     var crit = a.aligned[c.o.id];
+                    var viaBank = a.bankAligned[c.o.id];
+                    if (!crit && viaBank) {
+                        n++;
+                        var btip = 'Outcome ' + c.o.label + ' · ' + c.o.groupTitle + '\n' + viaBank.map(function (x) {
+                            return 'Draws ' + (x.group.pick ? x.group.pick + ' questions' : 'questions') +
+                                   (x.group.points ? ' (' + x.group.points + ' pts each)' : '') + ' from bank ' + x.bank.title +
+                                   (x.mastery ? '. Mastery at ' + x.mastery + '%' : '');
+                        }).join('\n');
+                        tr.appendChild(el('td', { class: 'hit band' + c.band, title: btip }, [
+                            el('span', { 'aria-hidden': 'true', text: '\u25cf' }),
+                            el('span', { class: 'sr', text: 'Aligned to outcome ' + c.o.label + ' through question bank ' + viaBank.map(function (x) { return x.bank.title; }).join(', ') })
+                        ]));
+                        return;
+                    }
                     if (crit) {
                         n++;
                         var tracked = crit.every(function (x) { return x.tracked; });
@@ -1220,6 +1403,11 @@
                 tr.appendChild(el('th', { scope: 'row', class: 'aname' }, [
                     el('a', { href: bank.url, target: '_blank', rel: 'noopener', text: bank.title }),
                     el('span', { class: 'badge', text: 'Question bank' }),
+                    model.quizzes.state === 'done'
+                        ? (bank.quizIds.length
+                            ? el('span', { class: 'badge', title: bank.quizTitles.join('\n'), text: 'Used by ' + plural(bank.quizIds.length, 'quiz', 'quizzes') })
+                            : el('span', { class: 'badge warnbadge', text: 'Not used by any quiz' }))
+                        : null,
                     bank.questionCount != null ? el('span', { class: 'badge', text: plural(bank.questionCount, 'question') }) : null
                 ]));
                 var n = 0;
@@ -1415,7 +1603,10 @@
                 var n = 0;
                 var cells = model.outcomes.map(function (o) {
                     var crit = a.aligned[o.id];
-                    if (!crit) return '';
+                    if (!crit) {
+                        if (a.bankAligned[o.id]) { n++; return 'X (question bank)'; }
+                        return '';
+                    }
                     n++;
                     return crit.every(function (x) { return x.tracked; }) ? 'X (tracked)' : 'X';
                 });
@@ -1432,7 +1623,9 @@
                 n++;
                 return mine[o.id].mastery ? 'X (mastery ' + mine[o.id].mastery + '%)' : 'X';
             });
-            lines.push(csvRow(['Question banks', bank.title, bank.id, '', '(question bank)'].concat(cells).concat([n])));
+            var usedBy = model.quizzes.state === 'done'
+                ? (bank.quizTitles.length ? 'used by: ' + bank.quizTitles.join('; ') : 'not used by any quiz') : '';
+            lines.push(csvRow(['Question banks', bank.title, bank.id, '', '(question bank' + (usedBy ? '; ' + usedBy : '') + ')'].concat(cells).concat([n])));
         });
         lines.push(csvRow(['', 'Assignments aligned', '', '', '']
             .concat(model.outcomes.map(function (o) { return o.assignmentIds.length; })).concat([''])));
@@ -1498,7 +1691,7 @@
         return n;
     }
 
-    function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
+    function plural(n, word, many) { return n + ' ' + (n === 1 ? word : (many || word + 's')); }
 
     function shadowCss() {
         var C = COLORS;
@@ -1586,6 +1779,13 @@
             '.k-item{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}',
             '.k-mark{color:' + C.accent + ';font-size:14px;}.k-mark.tracked{color:' + C.muted + ';}',
             '.k-flag{color:' + C.warning + ';font-weight:600;}',
+            '.prog{background:#fff;border:0.5px solid ' + C.border + ';border-radius:6px;padding:10px 13px;margin:-6px 0 14px;}',
+            '.prog-label{font-size:13px;font-weight:600;color:' + C.text + ';margin-bottom:6px;}',
+            '.prog-bar{display:block;width:100%;height:14px;appearance:none;-webkit-appearance:none;border:none;border-radius:7px;background:#e8eaec;overflow:hidden;}',
+            '.prog-bar::-webkit-progress-bar{background:#e8eaec;border-radius:7px;}',
+            '.prog-bar::-webkit-progress-value{background:' + C.accent + ';border-radius:7px;transition:width 0.2s ease;}',
+            '.prog-bar::-moz-progress-bar{background:' + C.accent + ';border-radius:7px;}',
+            '.badge.warnbadge{color:' + C.warning + ';border-color:' + C.warning + ';}',
             'ol.steps{margin:4px 0 0;padding-left:22px;font-size:13px;}ol.steps li{margin:2px 0;}',
             // Print: show both views, drop sticky/scroll, shrink type.
             '@media print{',
