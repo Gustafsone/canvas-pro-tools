@@ -17,7 +17,7 @@ Canvas Pro-Tools has eleven features. Each one can be switched on or off in the 
 | Rubrics+ | Rubric sorting, CSV export and import, details, and editing of locked rubrics. | On | [For everyone]({{ '/features/everyone/' | relative_url }}) |
 | Assignment Details | Annotate the assignments list with submission type, grade impact, and rubric. | On | [For everyone]({{ '/features/everyone/' | relative_url }}) |
 | Checkpoint Rubric Mapper | Map rubric criteria to discussion checkpoints so SpeedGrader fills in the checkpoint grades. | Off | [For everyone]({{ '/features/everyone/' | relative_url }}) |
-| Outcome Map | See every outcome and the assignments and question banks aligned to it, and clean up duplicates and leftovers. | On | [Outcome Map]({{ '/features/outcome-map/' | relative_url }}) |
+| Outcome Map | See every outcome and the assignments and question banks aligned to it, check every assignment's rubric, and clean up duplicates and leftovers. | On | [Outcome Map]({{ '/features/outcome-map/' | relative_url }}) |
 | Quiz Nav and Highlighting | Color-code quiz navigation links by question status. | On | [In SpeedGrader]({{ '/features/speedgrader/' | relative_url }}) |
 | Graded At Timestamp | Show when a submission was graded and whether it was manual or automatic. | On | [In SpeedGrader]({{ '/features/speedgrader/' | relative_url }}) |
 | Avatar Zoom | Hover a student's avatar in SpeedGrader to zoom it. | Off | [In SpeedGrader]({{ '/features/speedgrader/' | relative_url }}) |
