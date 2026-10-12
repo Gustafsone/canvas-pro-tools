@@ -18,7 +18,7 @@ Canvas shows outcome alignments one outcome at a time, and lists every assignmen
 
 The map has three tabs: **Map**, **Outcome Cleanup**, and **Rubrics**.
 
-The map only reads from Canvas. It never changes anything and saves nothing.
+The map reads from Canvas and saves nothing. The one exception is the **Delete** / **Remove from course** button on each outcome, which changes Canvas only after you confirm. See [Delete or remove an outcome](#delete-or-remove-an-outcome).
 
 1. TOC
 {:toc}
@@ -52,7 +52,7 @@ A key above the map shows the marks that appear in your course. Hover a column h
 
 Totals show how many outcomes each assignment covers and how many assignments and question banks assess each outcome. When two outcomes in the same group share a number, they are labeled 1a, 1b, and so on.
 
-The **legend** under the map lists every outcome with its source, description, outcome group, ID, how many assignments and banks use it, and whether Canvas will let you remove it now.
+The **legend** under the map lists every outcome with its source, description, outcome group, ID, how many assignments and banks use it, and a **Delete** or **Remove from course** button (see [Delete or remove an outcome](#delete-or-remove-an-outcome)).
 
 {: .screenshot }
 > [SCREENSHOT: the map with outcome columns, assignment rows, and the key]
@@ -78,7 +78,7 @@ Each tab opens with a **Checks** list that names every check and its result, eit
 After the Checks list comes a **suggested fix order**:
 
 1. Point rubric criteria at the outcome you are keeping, and on question bank pages align the kept outcome and remove the old one.
-2. Remove the outcomes you no longer need from the course Outcomes page.
+2. Remove the outcomes you no longer need with the **Delete** or **Remove from course** button in the legend or in an outcome row. When a button is unavailable, the note under it says why.
 3. Delete rubrics that are not attached to any assignment, if no one needs them. The **Unattached rubrics** list on the Rubrics tab marks the likely ones.
 4. Click **Refresh** in the map to check the result.
 5. In a Blueprint course, sync so associated courses receive the fixes.
@@ -95,7 +95,7 @@ Then it lists:
 - **Outcomes on rubrics or question banks but not in this course.**
 - **More than one outcome group in use.**
 
-Each item links to its Canvas page, which opens in a new tab. Make any change there, then click **Refresh**.
+Each item links to its Canvas page, which opens in a new tab. Outcome rows also have a **Delete** or **Remove from course** button. Make other changes in Canvas, then click **Refresh**.
 
 {: .screenshot }
 > [SCREENSHOT: the Outcome Cleanup tab with the Checks list, the fix order, and the Likely remove list]
@@ -107,7 +107,33 @@ An outcome is marked ⚑ when either is true:
 - It is a course-level duplicate that nothing uses, and its duplicate set has an Institution outcome or an in-use outcome to keep.
 - Its description names a different course code than the course, such as NRSG 403 in an NRSG 412 course.
 
-These are suggestions, not decisions. If the outcome is still used, move those alignments first. Canvas will not remove an outcome from a course while a rubric or question bank still uses it, and the **Can remove now** column shows which ones it will allow.
+These are suggestions, not decisions. If the outcome is still used, move those alignments first. Canvas will not remove an outcome from a course while a rubric or question bank still uses it, and the button on each outcome shows which ones it will allow.
+
+## Delete or remove an outcome
+
+Each outcome in the legend, and each outcome row on the Outcome Cleanup tab, has a button:
+
+| Button | Appears for | What it does |
+|---|---|---|
+| **Delete** | An outcome created in this course | Deletes the outcome from Canvas, not just from this course |
+| **Remove from course** | An Institution outcome, or one created in another course | Takes the outcome off this course's Outcomes page. The outcome itself stays, and you can add it back with **Find** |
+
+A confirmation comes first, and **Cancel** is selected by default. After you confirm, the map refreshes and the status line names the outcome that was removed.
+
+The button is unavailable, with the reason under it, when:
+
+- **Still aligned:** a rubric (attached or not) or a question bank still uses the outcome. Move those alignments first.
+- **Has student results:** students have results for an outcome created in this course. Canvas's own Outcomes page blocks deleting these too.
+- **In more than one group:** the outcome is linked in more than one outcome group in the course. Remove it on the Canvas Outcomes page.
+- **Blueprint course:** the course receives its content from a Blueprint. Remove the outcome in the Blueprint, then sync.
+
+In a Blueprint course itself, the confirmation warns that the change may reach associated courses on the next sync.
+
+{: .important }
+> The Outcome Map cannot undo a delete. Check the Likely remove reason, and the outcome's Canvas page, before you confirm.
+
+{: .screenshot }
+> [SCREENSHOT: the Delete confirmation for an outcome created in the course]
 
 ## Check rubrics
 
@@ -151,7 +177,7 @@ Account rubrics are left out of this table, because they are managed at the acco
 - **Export Map CSV:** the map as a spreadsheet, with each outcome's source, description, and whether it can be removed now.
 - **Export Outcome Cleanup CSV:** every Outcome Cleanup item with its source, details, hint, and link.
 - **Export Rubrics CSV:** three blocks: assignments, all rubrics, and unattached rubrics, with flags and links.
-- **Print:** a landscape copy of the **Map** and **Outcome Cleanup** tabs. With the **Rubrics** tab selected, Print gives a copy of the Rubrics tab on its own.
+- **Print:** a landscape copy of the **Map** and **Outcome Cleanup** tabs. The legend prints **Yes** or **No** in place of the Delete and Remove buttons. With the **Rubrics** tab selected, Print gives a copy of the Rubrics tab on its own.
 
 ## Limits
 
@@ -160,6 +186,7 @@ Account rubrics are left out of this table, because they are managed at the acco
 - Quiz links come from each quiz's question groups. A group of hand-picked questions is not linked, and a group that draws from a bank stored outside the course is counted in the notes but not mapped.
 - Possible duplicates and course-code mismatches are found by matching text, so review them before removing anything.
 - The Rubrics tab reads rubrics through assignments. Rubrics used only on ungraded discussions show as unattached.
+- Delete and Remove from course are unavailable in a course that receives Blueprint content.
 
 [Previous: Admin and dean tools]({{ '/features/admin/' | relative_url }}){: .mr-4 }
 [Next: Settings and data]({{ '/settings/' | relative_url }})
