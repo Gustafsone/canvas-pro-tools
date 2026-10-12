@@ -35,7 +35,7 @@ Storage is kept separately for each Canvas site, so data from different institut
 
 ## What it reads but does not store
 
-To draw its on-page elements, the extension reads content from the Canvas pages you visit, such as rubric criteria, assignment settings, enrollment lists, and grading status. That is held in memory only while the page is open. The Outcome Map reads the course's outcomes, assignments, rubrics, and question bank pages the same way. It requests no student data and saves nothing.
+To draw its on-page elements, the extension reads content from the Canvas pages you visit, such as rubric criteria, assignment settings, enrollment lists, and grading status. That is held in memory only while the page is open. The Outcome Map reads the course's outcomes, assignments, rubrics, question bank pages, and Classic Quiz settings the same way. It requests no student data and saves nothing.
 
 ## Changes it can make in Canvas
 

@@ -19,7 +19,7 @@ Current version
 {: .confirm }
 > Release date.
 
-- **New:** Outcome Map, on by default. An Outcome Map button on the course Outcomes page opens a read-only map of every outcome and the assignments and Classic Quiz question banks aligned to it, with a Cleanup tab, CSV export, and print. See [Outcome Map]({{ '/features/outcome-map/' | relative_url }}).
+- **New:** Outcome Map, on by default. An Outcome Map button on the course Outcomes page opens a read-only map of every outcome and the assignments and Classic Quiz question banks aligned to it, with an Outcome Cleanup tab, a Rubrics tab that checks every assignment and rubric (no rubric, points mismatch, shared and duplicate rubrics, unattached rubrics likely to remove), CSV export, and print. See [Outcome Map]({{ '/features/outcome-map/' | relative_url }}).
 
 ## 4.1.0
 
