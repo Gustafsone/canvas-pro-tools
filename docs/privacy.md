@@ -39,7 +39,7 @@ To draw its on-page elements, the extension reads content from the Canvas pages 
 
 ## Changes it can make in Canvas
 
-Only when you click them, some features change data in Canvas: importing a rubric from a CSV, and unlocking and restoring a rubric's assignment associations. To do this the extension reads Canvas's own anti-forgery token from the page and sends it back to Canvas with the request, the same way Canvas's pages do. The token is held in memory only and is never stored or sent anywhere else.
+Only when you click them, some features change data in Canvas: importing a rubric from a CSV, unlocking and restoring a rubric's assignment associations, and deleting an outcome or removing it from a course in the Outcome Map (after a confirmation). To do this the extension reads Canvas's own anti-forgery token from the page and sends it back to Canvas with the request, the same way Canvas's pages do. The token is held in memory only and is never stored or sent anywhere else.
 
 ## Permissions it asks for
 

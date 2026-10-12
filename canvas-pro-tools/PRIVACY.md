@@ -1,6 +1,6 @@
 # Canvas Pro-Tools - Privacy Policy
 
-**Last updated:** 10/4/2026
+**Last updated:** 10/12/2026
 **Applies to:** Canvas Pro-Tools browser extension, version 4.0.0 and later
 
 ## Summary
@@ -55,8 +55,9 @@ Canvas account is already permitted to see. The extension cannot access anything
 your Canvas permissions do not already allow.
 
 Some features change data in Canvas, but only when you click them: importing a
-rubric from a CSV, and unlocking and restoring a rubric's assignment
-associations. To make those requests, the extension reads Canvas's own
+rubric from a CSV, unlocking and restoring a rubric's assignment associations,
+and deleting an outcome or removing it from a course in the Outcome Map (after
+a confirmation). To make those requests, the extension reads Canvas's own
 anti-forgery token (the `_csrf_token` cookie on the Canvas page) and sends it
 back to Canvas with the request, the same way Canvas's own pages do. The token
 is held in memory only and is never stored or sent anywhere else.

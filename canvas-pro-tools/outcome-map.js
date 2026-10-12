@@ -18,7 +18,7 @@
 //     course, unattached rubrics that carry outcomes, assignments with no
 //     outcome, outcomes used but not linked in the course, and a note when
 //     more than one outcome group is in use. Each outcome row says whether
-//     Canvas will let you remove it now (can_unlink). (Duplicate rubric
+//     Canvas will let you remove it now (see removalState). (Duplicate rubric
 //     copies live on the Rubrics tab.)
 //   - Tab numbers count checks that found something, not items: "Outcome
 //     Cleanup (8)" means 8 of its checks found something. The checklist at
@@ -39,6 +39,12 @@
 //     A "Likely remove" hint marks (a) course-level duplicates nothing uses,
 //     when the set has another member worth keeping, and (b) outcomes whose
 //     description names a different course code than this course.
+//   - Delete / Remove from course: a button for each outcome in the Map
+//     legend and in the Outcome Cleanup outcome rows. Delete for outcomes
+//     created in this course, Remove from course for Institution and
+//     other-course outcomes. Unavailable, with the reason shown, when Canvas
+//     would refuse or its own Outcomes page disables it (see removalState).
+//     A confirmation dialog comes first; Refresh runs after a removal.
 //   - Refresh, Export Map CSV, Export Outcome Cleanup CSV, Export Rubrics CSV,
 //     Print (landscape). Print covers Map + Outcome Cleanup, or only Rubrics when that tab
 //     is selected.
@@ -55,9 +61,11 @@
 // outcome assessed only through a quiz bank is never shown as unused or
 // Likely remove.
 //
-// READ-ONLY. Same-origin GET requests only. Nothing in Canvas is changed and
-// nothing is written to chrome.storage. No student data (submissions, scores,
-// rollups) is requested.
+// WRITES. Every request is a same-origin GET except one the user starts and
+// confirms: Delete / Remove from course sends DELETE
+// /api/v1/courses/:id/outcome_groups/:group_id/outcomes/:outcome_id with the
+// X-CSRF-Token header. Nothing is written to chrome.storage. No student data
+// (submissions, scores, rollups) is requested.
 //
 // Probe evidence (courses 29965, 43251, 41902; 2026-10-08/09):
 //   - outcome_group_links?outcome_style=full returns outcome + outcome_group;
@@ -89,6 +97,15 @@
 //     div.assessment_question_bank > a.bank_name_link[href=.../question_banks/ID];
 //     the group's hidden bank_id input is empty. .pick_count and
 //     .question_points sit inside .group_top. Edit pages are 176-294 KB.
+//   - Removal probes (sandbox 25368 and course 24190, 2026-10-12): the
+//     classic page's Delete sends DELETE /api/v1/courses/:id/outcome_groups/
+//     :group_id/outcomes/:outcome_id; 200 returns the removed link. A course
+//     outcome with one link is deleted outright (GET /api/v1/outcomes/:id is
+//     then 404). An Institution outcome is only unlinked (GET still 200). An
+//     aligned outcome returns 400 {"message":"... cannot be deleted because
+//     it is aligned to content."}. The API also deleted a course outcome with
+//     student results (assessed: true, can_unlink: true), but the classic
+//     page disables Delete for it, so the map disables it too
 //   - contributing_scores is deliberately NOT used: it returns student scores
 //   - Outcomes page CSP is frame-ancestors only, so Blob downloads work
 //   - Toolbar is div.toolbar.outcomes-toolbar; Find is button.find_outcome
@@ -156,7 +173,9 @@
 
     // Current map state. runToken guards against a slow load finishing after
     // the user pressed Refresh.
-    var state = { model: null, runToken: 0 };
+    // ui is kept so the Delete / Remove buttons can report status and run
+    // Refresh. notice carries a removal message into the next load's status.
+    var state = { model: null, runToken: 0, ui: null, removing: false, notice: '' };
 
     // -- Entry ----------------------------------------------------------------
 
@@ -230,6 +249,7 @@
     function startMapMode() {
         takeOverPage();
         var ui = buildShell();
+        state.ui = ui;
         run(ui);
     }
 
@@ -268,12 +288,14 @@
                     setBusy(ui, false);
                     var secs = ((performance.now() - t0) / 1000).toFixed(1);
                     var b = model.banks;
-                    setStatus(ui, 'Loaded ' + plural(model.outcomes.length, 'outcome') + ', ' +
+                    var notice = state.notice;
+                    state.notice = '';
+                    setStatus(ui, notice + 'Loaded ' + plural(model.outcomes.length, 'outcome') + ', ' +
                         plural(model.assignments.length, 'assignment') + ', ' +
                         plural(model.rubrics.length, 'rubric') + ' and ' +
                         (b.state === 'error' ? 'no question banks (they could not be read)'
                                              : plural(b.list.length, 'question bank')) +
-                        ' in ' + secs + ' s. Read-only: nothing in Canvas was changed.', false);
+                        ' in ' + secs + ' s.', false);
                 });
             })
             .catch(function (err) {
@@ -682,14 +704,18 @@
         var groupOrder = {};
         raw.links.forEach(function (l) {
             var o = l.outcome;
-            if (!o || o.id == null || model.outcomeById[String(o.id)]) return;
+            if (!o || o.id == null) return;
+            var seen = model.outcomeById[String(o.id)];
+            if (seen) { seen.linkCount++; return; }
             var g = l.outcome_group || {};
             var gKey = g.id != null ? String(g.id) : 'none';
             if (!(gKey in groupOrder)) {
                 groupOrder[gKey] = model.outcomeGroups.length;
                 model.outcomeGroups.push({ id: gKey, title: (g.title || '').trim() || 'Ungrouped', outcomes: [] });
             }
-            var title = (o.title || o.display_name || ('Outcome ' + o.id)).trim();
+            // Titles can arrive HTML-escaped ("domain &amp; range"), like
+            // assignment names, so they go through plainText() too.
+            var title = plainText(o.title || o.display_name) || ('Outcome ' + o.id);
             var rec = {
                 id: String(o.id), title: title, groupId: gKey,
                 groupTitle: model.outcomeGroups[groupOrder[gKey]].title,
@@ -700,6 +726,13 @@
                 number: leadingNumber(title),
                 canUnlink: l.can_unlink === true,
                 assessed: o.assessed === true,
+                // Removal: the DELETE path (same as the link's own url in
+                // probes), whether the group is editable (only an explicit
+                // false blocks), and how many links this course has to it.
+                deleteUrl: g.id != null ? '/api/v1/courses/' + courseId + '/outcome_groups/' + g.id + '/outcomes/' + o.id : '',
+                groupCanEdit: g.can_edit !== false,
+                linkCount: 1,
+                bpChild: model.blueprint.role === 'child',
                 assignmentIds: [], bankIds: [], orphanRubricIds: [], label: '', hints: []
             };
             rec.descCodes = courseCodes(rec.description);
@@ -1013,17 +1046,51 @@
                (o.bankIds.length ? ' and ' + plural(o.bankIds.length, 'question bank') : '');
     }
 
-    // Whether Canvas will let the outcome be removed from this course now.
-    // Probe evidence: can_unlink is true only when nothing in the course is
-    // aligned to the outcome any more (rubrics, including unattached ones, and
-    // question banks).
-    function removalText(o) {
-        var t = o.canUnlink
-            ? 'Canvas allows removing it now'
-            : 'Canvas will not remove it yet: first point its rubric criteria and question bank alignments at the outcome you are keeping, or delete unattached rubrics that carry it';
-        if (o.assessed && o.source.kind !== 'institution') t += '. It has student results';
-        return t;
+    // What the Delete / Remove from course button may do for an outcome, and
+    // why not when it is unavailable. Probe evidence (2026-10-12):
+    //   - can_unlink is true only when nothing in the course is aligned to the
+    //     outcome any more (rubrics, including unattached ones, and question
+    //     banks); otherwise DELETE returns 400 "aligned to content"
+    //   - a course outcome with student results (assessed) and can_unlink true
+    //     CAN be deleted through the API, but Canvas's own Outcomes page
+    //     disables Delete for it, so this matches Canvas and blocks it
+    //   - Institution and other-course outcomes are only unlinked, so the
+    //     results rule does not apply (the classic page offers Delete for an
+    //     unaligned Institution outcome; assessed is true for every
+    //     Institution outcome anyway)
+    //   - Blueprint children are blocked by decision: Remove in the Blueprint
+    //     and sync instead (whether Canvas allows it there is unverified)
+    function removalState(o) {
+        var own = o.source.kind === 'course';
+        var r = { allowed: false, action: own ? 'delete' : 'remove',
+                  label: own ? 'Delete' : 'Remove from course', short: '', reason: '' };
+        function no(shortText, reason) { r.short = shortText; r.reason = reason; return r; }
+        if (o.bpChild) {
+            return no('Blueprint course', 'This course gets its content from a Blueprint. Remove outcomes in the Blueprint course, then sync');
+        }
+        if (!o.deleteUrl) {
+            return no('Not available', 'Canvas did not report this outcome\'s outcome group, so remove it on the Canvas Outcomes page');
+        }
+        if (o.linkCount > 1) {
+            return no('In more than one group', 'This outcome is linked in more than one outcome group in this course, so remove it on the Canvas Outcomes page');
+        }
+        if (!o.groupCanEdit) {
+            return no('No permission', 'You do not have permission to change outcomes in this course');
+        }
+        if (!o.canUnlink) {
+            return no('Still aligned', 'Canvas will not remove it yet: first point its rubric criteria and question bank alignments at the outcome you are keeping, or delete unattached rubrics that carry it' +
+                (own && o.assessed ? '. It also has student results, so Canvas will not delete it after that either' : ''));
+        }
+        if (own && o.assessed) {
+            return no('Has student results', 'Students have results for this outcome, so Canvas does not allow deleting it');
+        }
+        r.allowed = true;
+        r.reason = own ? 'Canvas allows deleting it now'
+                       : 'Canvas allows removing it from this course now. The outcome itself is not deleted';
+        return r;
     }
+
+    function removalText(o) { return removalState(o).reason; }
 
     // Leading outcome number, e.g. "3. Explain ..." -> "3", "6.Employ" -> "6",
     // "1.2 Describe" -> "1.2". Empty string when the title has no number.
@@ -1716,7 +1783,7 @@
                 el('td', { class: 'mono', text: o.id }),
                 el('td', { class: o.assignmentIds.length || !ready || o.bankIds.length ? '' : 'zero', text: String(o.assignmentIds.length) }),
                 el('td', { text: b.state === 'done' ? String(o.bankIds.length) : '…' }),
-                el('td', { title: removalText(o), text: o.canUnlink ? 'Yes' : 'No' }),
+                removeCell(o, true),
                 el('td', { title: o.hints.join('\n') }, [o.hints.length ? el('span', { class: 'pill warn', text: 'Likely remove' }) : null])
             ]));
         });
@@ -1750,8 +1817,8 @@
             return;
         }
         panel.appendChild(el('p', { class: 'hint no-print', text:
-            'Things worth a look. Each name links to its Canvas page (opens in a new tab), where any change is made. ' +
-            'The Outcome Map itself never changes Canvas. After fixing something, click Refresh to check again.' }));
+            'Things worth a look. Each name links to its Canvas page (opens in a new tab), where most changes are made. ' +
+            'Outcome rows also have a Delete or Remove from course button. After fixing something, click Refresh to check again.' }));
 
         if (model.banks.state === 'error') {
             panel.appendChild(el('p', { class: 'note warnnote', text:
@@ -1767,7 +1834,7 @@
         var bp = model.blueprint;
         var steps = [
             'Point rubric criteria at the outcome you are keeping (edit the rubric), and on question bank pages use Align Outcome for the kept outcome and remove the old one.',
-            'Remove the outcomes you no longer need from the course Outcomes page. The Can remove now column in the legend shows which Canvas will allow.',
+            'Remove the outcomes you no longer need with the Delete or Remove from course button in the legend or in an outcome row. When a button is unavailable, the note under it says why.',
             'Delete rubrics that are not attached to any assignment, if no one needs them. The Unattached rubrics list on the Rubrics tab marks the likely ones.',
             'Click Refresh here to check the result.'
         ];
@@ -1794,9 +1861,13 @@
             box.appendChild(el('p', { class: 'help', text: s.help }));
             if (s.items.length) {
                 var t = el('table', { class: 'clean' });
-                t.appendChild(el('thead', null, [el('tr', null, ['Name', 'Type', 'Source', 'ID', 'Detail', 'Hint'].map(function (h) {
+                // Action column only where the section lists linked outcomes.
+                var hasAction = s.items.some(function (it) { return it.outcome; });
+                var heads = ['Name', 'Type', 'Source', 'ID', 'Detail', 'Hint'].map(function (h) {
                     return el('th', { scope: 'col', text: h });
-                }))]));
+                });
+                if (hasAction) heads.push(el('th', { scope: 'col', class: 'no-print', text: 'Action' }));
+                t.appendChild(el('thead', null, [el('tr', null, heads)]));
                 var tb = el('tbody');
                 s.items.forEach(function (it) {
                     tb.appendChild(el('tr', null, [
@@ -1805,7 +1876,8 @@
                         el('td', null, [it.outcome ? el('span', { class: 'src src-' + it.outcome.source.kind, text: it.source }) : null]),
                         el('td', { class: 'mono', text: it.id }),
                         el('td', { text: it.detail }),
-                        el('td', null, [it.hint ? el('span', { class: 'pill warn', text: it.hint }) : null])
+                        el('td', null, [it.hint ? el('span', { class: 'pill warn', text: it.hint }) : null]),
+                        hasAction ? (it.outcome ? removeCell(it.outcome, false) : el('td', { class: 'no-print' })) : null
                     ]));
                 });
                 t.appendChild(tb);
@@ -1826,7 +1898,7 @@
 
         panel.appendChild(el('p', { class: 'hint no-print', text:
             'Rubric checks for every assignment, including ones with no outcomes. Each name links to its Canvas page ' +
-            '(opens in a new tab), where any change is made. The Outcome Map itself never changes Canvas. ' +
+            '(opens in a new tab), where any change is made. The Outcome Map never changes rubrics. ' +
             'After fixing something, click Refresh to check again.' }));
 
         // Print-only heading so the printed Rubrics report names its course.
@@ -1996,7 +2068,7 @@
         var pad = ['', '', '', ''];
         lines.push(csvRow(pad.concat(['Outcome source']).concat(model.outcomes.map(function (o) { return o.source.label; }))));
         lines.push(csvRow(pad.concat(['Outcome description']).concat(model.outcomes.map(function (o) { return o.description; }))));
-        lines.push(csvRow(pad.concat(['Can remove now']).concat(model.outcomes.map(function (o) { return o.canUnlink ? 'Yes' : 'No'; }))));
+        lines.push(csvRow(pad.concat(['Can remove now']).concat(model.outcomes.map(function (o) { return removalState(o).allowed ? 'Yes' : 'No'; }))));
         lines.push(csvRow(pad.concat(['Hint']).concat(model.outcomes.map(function (o) { return o.hints.length ? 'Likely remove' : ''; }))));
         model.assignmentGroups.forEach(function (ag) {
             ag.assignments.forEach(function (a) {
@@ -2109,6 +2181,172 @@
     }
 
     // =========================================================================
+    // Delete / Remove from course
+    // =========================================================================
+
+    var rmSeq = 0;
+
+    // Button cell for one outcome. In the legend, print shows Yes / No (the
+    // old Can remove now value); in Outcome Cleanup the cell does not print.
+    // Unavailable buttons use aria-disabled, not disabled, so they stay
+    // focusable and screen readers reach the reason.
+    function removeCell(o, inLegend) {
+        var rs = removalState(o);
+        var btn = el('button', { type: 'button', class: 'btn btn-sm no-print', text: rs.label });
+        var kids = [];
+        if (inLegend) kids.push(el('span', { class: 'print-only', text: rs.allowed ? 'Yes' : 'No' }));
+        kids.push(btn);
+        if (rs.allowed) {
+            btn.title = rs.reason;
+            btn.addEventListener('click', function () { confirmRemoval(o, btn); });
+        } else {
+            var rid = 'om-rm-why-' + (++rmSeq);
+            btn.setAttribute('aria-disabled', 'true');
+            btn.setAttribute('aria-describedby', rid);
+            kids.push(el('span', { class: 'rm-why no-print', id: rid, title: rs.reason }, [
+                rs.short,
+                el('span', { class: 'sr', text: ': ' + rs.reason })
+            ]));
+        }
+        return el('td', { class: 'rm-cell' + (inLegend ? '' : ' no-print') }, kids);
+    }
+
+    // Native modal <dialog>: focus moves in, Escape cancels, the page behind
+    // is inert. It lives inside .page so it inherits the map's font.
+    function confirmRemoval(o, btn) {
+        if (state.removing || !state.ui) return;
+        var rs = removalState(o);
+        if (!rs.allowed) return;
+        var own = rs.action === 'delete';
+        var where = o.source.kind === 'institution' ? 'at the institution level' : 'in another course';
+        // Delete is styled as destructive (red); Remove only unlinks, so it
+        // uses the accent color. Cancel keeps the default focus either way.
+        var cancel = el('button', { type: 'button', class: 'btn dlg-btn', text: 'Cancel', autofocus: true });
+        var ok = el('button', { type: 'button', class: 'btn dlg-btn ' + (own ? 'btn-danger' : 'btn-primary'), text: rs.label });
+        var dlg = el('dialog', { class: 'rm-dlg ' + (own ? 'is-delete' : 'is-remove'), 'aria-labelledby': 'om-rm-title', 'aria-describedby': 'om-rm-desc' }, [
+            el('div', { class: 'dlg-head' }, [
+                el('span', { class: 'dlg-icon', 'aria-hidden': 'true' }, [dlgIcon(own)]),
+                el('h2', { id: 'om-rm-title', text: own ? 'Delete this outcome?' : 'Remove this outcome from the course?' })
+            ]),
+            el('div', { class: 'dlg-body' }, [
+                el('div', { class: 'dlg-outcome' }, [
+                    el('div', { class: 'dlg-otitle', text: o.title }),
+                    el('div', { class: 'dlg-meta' }, [
+                        el('span', { class: 'src src-' + o.source.kind, text: o.source.label }),
+                        el('span', { class: 'mono', text: 'ID ' + o.id }),
+                        o.groupTitle ? el('span', { class: 'dlg-group', text: o.groupTitle }) : null
+                    ])
+                ]),
+                el('p', { id: 'om-rm-desc', class: 'dlg-text', text: own
+                    ? 'This outcome was created in this course. Deleting it removes it from Canvas, not just from this course. The Outcome Map cannot undo this.'
+                    : 'This outcome was created ' + where + '. Removing it takes it off this course\'s Outcomes page. The outcome itself is not deleted, and you can add it back with Find.' }),
+                state.model && state.model.blueprint.role === 'master'
+                    ? el('p', { class: 'dlg-bp', text: 'This is a Blueprint course. The change may reach associated courses on the next sync.' })
+                    : null
+            ]),
+            el('div', { class: 'dlg-actions' }, [cancel, ok])
+        ]);
+        cancel.addEventListener('click', function () { dlg.close(); });
+        ok.addEventListener('click', function () { dlg.close('ok'); });
+        dlg.addEventListener('close', function () {
+            var go = dlg.returnValue === 'ok';
+            dlg.remove();
+            if (go) removeOutcome(o, rs, btn);
+            else btn.focus();
+        });
+        state.ui.page.appendChild(dlg);
+        dlg.showModal();
+    }
+
+    // Small inline icons for the dialog header: a trash can for Delete, a
+    // minus in a circle for Remove. Decorative (aria-hidden on the wrapper).
+    function dlgIcon(isDelete) {
+        var NS = 'http://www.w3.org/2000/svg';
+        var svg = document.createElementNS(NS, 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('width', '20');
+        svg.setAttribute('height', '20');
+        svg.setAttribute('fill', 'none');
+        svg.setAttribute('stroke', 'currentColor');
+        svg.setAttribute('stroke-width', '2');
+        svg.setAttribute('stroke-linecap', 'round');
+        svg.setAttribute('stroke-linejoin', 'round');
+        var paths = isDelete
+            ? ['M3 6h18', 'M8 6V4h8v2', 'M19 6l-1 14H6L5 6', 'M10 11v6', 'M14 11v6']
+            : ['M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18', 'M8 12h8'];
+        paths.forEach(function (d) {
+            var path = document.createElementNS(NS, 'path');
+            path.setAttribute('d', d);
+            svg.appendChild(path);
+        });
+        return svg;
+    }
+
+    function removeOutcome(o, rs, btn) {
+        var ui = state.ui;
+        var own = rs.action === 'delete';
+        state.removing = true;
+        btn.setAttribute('aria-disabled', 'true');
+        btn.textContent = own ? 'Deleting...' : 'Removing...';
+        setStatus(ui, (own ? 'Deleting' : 'Removing') + ' "' + o.title + '"...', true);
+
+        fetch(o.deleteUrl, {
+            method: 'DELETE',
+            credentials: 'same-origin',
+            headers: { Accept: 'application/json', 'X-CSRF-Token': csrfToken() }
+        }).then(function (r) {
+            return r.text().then(function (t) {
+                var body = null;
+                try { body = JSON.parse(t.replace(/^while\(1\);/, '')); } catch (e) { /* not JSON */ }
+                return { ok: r.ok, status: r.status, body: body };
+            });
+        }).then(function (res) {
+            state.removing = false;
+            if (!res.ok) { fail(removalError(res)); return; }
+            state.notice = (own ? 'Deleted "' : 'Removed "') + o.title + '" (ID ' + o.id + ')' +
+                           (own ? '. ' : ' from this course. ');
+            run(ui);
+        }).catch(function (err) {
+            state.removing = false;
+            fail('The request did not reach Canvas' + (err && err.message ? ' (' + err.message + ')' : '') + '.');
+        });
+
+        function fail(msg) {
+            btn.removeAttribute('aria-disabled');
+            btn.textContent = rs.label;
+            ui.status.textContent = '';
+            ui.status.classList.add('error');
+            ui.status.appendChild(document.createTextNode(msg));
+            console.warn('CPT Outcome Map: remove failed', o.id, msg);
+        }
+    }
+
+    // Probe evidence: 400 carries {"message": "..."}; 404 carries
+    // {"errors":[{"message": "..."}]}. 401 / 403 are assumed from other Canvas
+    // endpoints (not seen on this one).
+    function removalError(res) {
+        var b = res.body || {};
+        var cm = b.message || (b.errors && b.errors[0] && b.errors[0].message) || '';
+        if (res.status === 400) {
+            return 'Canvas did not remove the outcome' + (cm ? ': ' + cm : '.') + ' Click Refresh to see its current alignments.';
+        }
+        if (res.status === 401 || res.status === 403) {
+            return 'Canvas did not allow this (HTTP ' + res.status + '). Removing outcomes needs permission to manage outcomes in this course.';
+        }
+        if (res.status === 404) {
+            return 'Canvas could not find this outcome in the course (HTTP 404). It may already be removed. Click Refresh.';
+        }
+        return 'Canvas could not remove the outcome (HTTP ' + res.status + ')' + (cm ? ': ' + cm : '.');
+    }
+
+    // Same as rubric-assoc-editor.js: the token from the _csrf_token cookie,
+    // required on every non-GET Canvas API request from a page session.
+    function csrfToken() {
+        var m = /(?:^|;\s*)_csrf_token=([^;]*)/.exec(document.cookie);
+        return m ? decodeURIComponent(m[1]) : '';
+    }
+
+    // =========================================================================
     // Helpers
     // =========================================================================
 
@@ -2149,8 +2387,35 @@
             '.course{color:' + C.muted + ';font-size:14px;}',
             '.actions{display:flex;flex-wrap:wrap;gap:8px;}',
             '.btn{font:inherit;font-size:13px;padding:6px 12px;border:1px solid ' + C.border + ';border-radius:4px;background:#fff;color:' + C.text + ';cursor:pointer;display:inline-flex;align-items:center;}',
-            '.btn:hover:not([disabled]){background:#f2f4f5;text-decoration:none;}',
-            '.btn[disabled]{opacity:0.55;cursor:default;}',
+            '.btn:hover:not([disabled]):not([aria-disabled="true"]){background:#f2f4f5;text-decoration:none;}',
+            '.btn[disabled],.btn[aria-disabled="true"]{opacity:0.55;cursor:default;}',
+            '.btn-sm{font-size:12px;padding:2px 8px;white-space:nowrap;}',
+            'td.rm-cell{min-width:120px;}',
+            '.rm-why{display:block;font-size:11px;color:' + C.muted + ';margin-top:2px;}',
+            // Confirm dialog. Danger red #b42318 is 6.5:1 on white (AA);
+            // the tinted header keeps the title text dark for contrast.
+            'dialog.rm-dlg{--dlg-tone:' + C.accent + ';--dlg-tint:' + C.accentBg + ';border:none;border-radius:12px;padding:0;width:min(500px,calc(100vw - 32px));color:' + C.text + ';font:inherit;background:#fff;box-shadow:0 20px 50px rgba(16,24,40,0.25),0 0 0 1px rgba(16,24,40,0.06);overflow:hidden;}',
+            'dialog.rm-dlg.is-delete{--dlg-tone:#b42318;--dlg-tint:#fef3f2;}',
+            'dialog.rm-dlg[open]{animation:omdlg 0.16s ease-out;}',
+            '@keyframes omdlg{from{opacity:0;transform:translateY(8px) scale(0.98);}}',
+            '@media (prefers-reduced-motion:reduce){dialog.rm-dlg[open]{animation:none;}}',
+            'dialog.rm-dlg::backdrop{background:rgba(16,24,40,0.45);}',
+            '.dlg-head{display:flex;align-items:center;gap:12px;padding:16px 20px;background:var(--dlg-tint);border-top:4px solid var(--dlg-tone);}',
+            '.dlg-icon{flex:none;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:#fff;color:var(--dlg-tone);box-shadow:0 0 0 1px rgba(16,24,40,0.08);}',
+            'dialog.rm-dlg h2{margin:0;font-size:17px;font-weight:700;}',
+            '.dlg-body{padding:16px 20px 4px;}',
+            '.dlg-outcome{border:1px solid #e3e6e8;border-left:3px solid var(--dlg-tone);border-radius:8px;padding:10px 12px;margin:0 0 12px;background:#fafbfb;}',
+            '.dlg-otitle{font-weight:700;font-size:15px;margin-bottom:4px;}',
+            '.dlg-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:12px;color:' + C.muted + ';}',
+            '.dlg-text{margin:0 0 12px;font-size:14px;line-height:1.5;}',
+            '.dlg-bp{margin:0 0 12px;font-size:13px;padding:8px 12px;border-radius:6px;background:#f4f0fa;border-left:3px solid #5b3f8c;}',
+            '.dlg-actions{display:flex;justify-content:flex-end;gap:10px;padding:12px 20px;background:#f7f8f9;border-top:1px solid #e3e6e8;}',
+            '.btn.dlg-btn{font-size:14px;padding:8px 18px;border-radius:6px;font-weight:600;}',
+            '.btn.btn-danger{background:#b42318;border-color:#b42318;color:#fff;}',
+            '.btn.btn-danger:hover:not([disabled]){background:#912018;border-color:#912018;}',
+            '.btn.btn-primary{background:' + C.accent + ';border-color:' + C.accent + ';color:#fff;}',
+            '.btn.btn-primary:hover:not([disabled]){background:#055a83;border-color:#055a83;}',
+            '.btn.btn-danger:focus-visible{outline-color:#b42318;}',
             '.status{padding:9px 13px;margin:0 0 14px;background:#fff;border:0.5px solid ' + C.border + ';border-radius:6px;font-size:13px;}',
             '.status.error{border-color:' + C.warning + ';color:' + C.warning + ';}',
             '.spin{display:inline-block;animation:omspin 0.8s linear infinite;}@keyframes omspin{to{transform:rotate(360deg)}}',
