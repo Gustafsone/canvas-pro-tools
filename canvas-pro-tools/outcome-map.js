@@ -12,18 +12,36 @@
 //     aligned to it, and per-row / per-column counts. A scope note says what
 //     the map includes, whether outcome criteria count toward the grade, and,
 //     for Blueprint courses, where shared content is managed.
-//   - Cleanup tab: a suggested fix order, a Likely remove list, possible
-//     duplicate outcomes, outcomes nothing uses, outcomes that may belong to
-//     another course, unattached rubrics that carry outcomes, assignments with
-//     no outcome, duplicate rubric copies, outcomes used but not linked in the
-//     course, and a note when more than one outcome group is in use. Each
-//     outcome row says whether Canvas will let you remove it now (can_unlink).
+//   - Outcome Cleanup tab: a checklist naming every check and its result,
+//     a suggested fix order, a Likely remove list, possible duplicate
+//     outcomes, outcomes nothing uses, outcomes that may belong to another
+//     course, unattached rubrics that carry outcomes, assignments with no
+//     outcome, outcomes used but not linked in the course, and a note when
+//     more than one outcome group is in use. Each outcome row says whether
+//     Canvas will let you remove it now (can_unlink). (Duplicate rubric
+//     copies live on the Rubrics tab.)
+//   - Tab numbers count checks that found something, not items: "Outcome
+//     Cleanup (8)" means 8 of its checks found something. The checklist at
+//     the top of each tab names the checks; the tab's hover tip says "N of M".
+//   - Rubrics tab: rubric checks for every assignment, outcome-linked or not.
+//     A checklist of the five counted checks, then assignment rows grouped by assignment group (points,
+//     attached rubric, rubric total, used for grading, outcome criteria), then
+//     every rubric in the course (total, criteria, outcome criteria, which
+//     assignments use it). Flags: no rubric, points mismatch, shared by more
+//     than one assignment (Canvas locks editing), duplicate copies (same title
+//     or identical criteria), not attached, no outcome criteria. At the
+//     bottom, unattached course rubrics with a hint: Likely remove (no
+//     criteria, or a copy of a rubric that is attached) or Review. Built from
+//     phase 1 data only, so it is ready before question banks finish. Prints
+//     on its own: with the Rubrics tab selected, Print prints only that tab.
 //   - Every outcome is tagged with its source: Institution (account-level),
 //     This course, or Other course (course-level outcome created elsewhere).
 //     A "Likely remove" hint marks (a) course-level duplicates nothing uses,
 //     when the set has another member worth keeping, and (b) outcomes whose
 //     description names a different course code than this course.
-//   - Refresh, Export Map CSV, Export Cleanup CSV, Print (landscape)
+//   - Refresh, Export Map CSV, Export Outcome Cleanup CSV, Export Rubrics CSV,
+//     Print (landscape). Print covers Map + Outcome Cleanup, or only Rubrics when that tab
+//     is selected.
 //
 // LOADING. Phase 1 (parallel, about 2 s): course, blueprint subscription,
 // outcome_group_links, assignment_groups, assignments, rubrics. The map is
@@ -49,6 +67,12 @@
 //   - assignments[].rubric[] criteria carry outcome_id and ignore_for_scoring;
 //     rubric_settings.id identifies the attached rubric
 //   - rubrics list returns data[] with learning_outcome_id (no per-rubric calls)
+//   - assignments[].rubric_settings.points_possible is the rubric total and
+//     use_rubric_for_grading is a real false when grading is off (an NRSG
+//     course, 2026-10-12: 22 rubric assignments, all totals
+//     matched points_possible, one proctored exam with grading off)
+//   - assignment names can arrive HTML-escaped ("Root Cause Analysis &amp;
+//     Patient Safety"), so names and rubric titles go through plainText()
 //   - course.blueprint marks a Blueprint master; a child has a
 //     blueprint_subscriptions entry naming its master, and its assignments
 //     carry is_master_course_child_content / restricted_by_master_course
@@ -223,7 +247,7 @@
                 var model = buildModel(raw);
                 state.model = model;
                 renderAll(ui, model);
-                setStatus(ui, 'Map ready. Checking question banks and quizzes... Cleanup results appear when this finishes.', true);
+                setStatus(ui, 'Map ready. Checking question banks and quizzes... Outcome Cleanup results appear when this finishes.', true);
                 var progress = function (label, done, total) {
                     if (token !== state.runToken) return;
                     setProgress(ui, label, done, total);
@@ -307,13 +331,15 @@
         var btnRefresh = el('button', { type: 'button', class: 'btn', disabled: true, text: 'Refresh',
             title: 'Reload everything from Canvas, for example after fixing something' });
         var btnMap = el('button', { type: 'button', class: 'btn', disabled: true, text: 'Export Map CSV' });
-        var btnClean = el('button', { type: 'button', class: 'btn', disabled: true, text: 'Export Cleanup CSV' });
-        var btnPrint = el('button', { type: 'button', class: 'btn', disabled: true, text: 'Print' });
+        var btnClean = el('button', { type: 'button', class: 'btn', disabled: true, text: 'Export Outcome Cleanup CSV' });
+        var btnRub = el('button', { type: 'button', class: 'btn', disabled: true, text: 'Export Rubrics CSV' });
+        var btnPrint = el('button', { type: 'button', class: 'btn', disabled: true, text: 'Print',
+            title: 'Prints the Map and Outcome Cleanup tabs, or only the Rubrics tab when it is selected' });
         var back = el('a', { class: 'btn', href: '/courses/' + courseId + '/outcomes', text: 'Canvas Outcomes page' });
 
         var header = el('header', { class: 'top' }, [
             el('div', null, [titleEl, courseEl]),
-            el('div', { class: 'actions no-print' }, [btnRefresh, btnMap, btnClean, btnPrint, back])
+            el('div', { class: 'actions no-print' }, [btnRefresh, btnMap, btnClean, btnRub, btnPrint, back])
         ]);
 
         var status = el('div', { class: 'status no-print', role: 'status', 'aria-live': 'polite' });
@@ -327,11 +353,13 @@
         var tiles = el('section', { class: 'tiles', 'aria-label': 'Summary' });
 
         var tabMap = el('button', { type: 'button', role: 'tab', id: 'om-tab-map', 'aria-controls': 'om-panel-map', 'aria-selected': 'true', class: 'tab', text: 'Map' });
-        var tabClean = el('button', { type: 'button', role: 'tab', id: 'om-tab-clean', 'aria-controls': 'om-panel-clean', 'aria-selected': 'false', tabindex: '-1', class: 'tab', text: 'Cleanup' });
-        var tablist = el('div', { role: 'tablist', 'aria-label': 'Outcome Map views', class: 'tablist no-print' }, [tabMap, tabClean]);
+        var tabClean = el('button', { type: 'button', role: 'tab', id: 'om-tab-clean', 'aria-controls': 'om-panel-clean', 'aria-selected': 'false', tabindex: '-1', class: 'tab', text: 'Outcome Cleanup' });
+        var tabRub = el('button', { type: 'button', role: 'tab', id: 'om-tab-rub', 'aria-controls': 'om-panel-rub', 'aria-selected': 'false', tabindex: '-1', class: 'tab', text: 'Rubrics' });
+        var tablist = el('div', { role: 'tablist', 'aria-label': 'Outcome Map views', class: 'tablist no-print' }, [tabMap, tabClean, tabRub]);
 
         var panelMap = el('section', { role: 'tabpanel', id: 'om-panel-map', 'aria-labelledby': 'om-tab-map', class: 'panel' });
         var panelClean = el('section', { role: 'tabpanel', id: 'om-panel-clean', 'aria-labelledby': 'om-tab-clean', class: 'panel', hidden: true });
+        var panelRub = el('section', { role: 'tabpanel', id: 'om-panel-rub', 'aria-labelledby': 'om-tab-rub', class: 'panel', hidden: true });
 
         page.appendChild(header);
         page.appendChild(status);
@@ -340,9 +368,10 @@
         page.appendChild(tablist);
         page.appendChild(panelMap);
         page.appendChild(panelClean);
+        page.appendChild(panelRub);
 
-        var tabs = [tabMap, tabClean];
-        var panels = [panelMap, panelClean];
+        var tabs = [tabMap, tabClean, tabRub];
+        var panels = [panelMap, panelClean, panelRub];
         function select(i, focus) {
             tabs.forEach(function (t, j) {
                 var on = i === j;
@@ -350,6 +379,9 @@
                 t.setAttribute('tabindex', on ? '0' : '-1');
                 panels[j].hidden = !on;
             });
+            // The Rubrics report prints on its own; Map and Cleanup print
+            // together. The class also covers Ctrl+P, not just the button.
+            page.classList.toggle('print-rubrics', i === 2);
             if (focus) tabs[i].focus();
             if (i === 0) refreshStickyOffsets(panelMap);
         }
@@ -367,8 +399,8 @@
         var ui = {
             root: root, page: page, courseEl: courseEl, status: status, tiles: tiles,
             progWrap: progWrap, progLabel: progLabel, progBar: progBar,
-            tabClean: tabClean, panelMap: panelMap, panelClean: panelClean,
-            btnRefresh: btnRefresh, btnMap: btnMap, btnClean: btnClean, btnPrint: btnPrint
+            tabClean: tabClean, tabRub: tabRub, panelMap: panelMap, panelClean: panelClean, panelRub: panelRub,
+            btnRefresh: btnRefresh, btnMap: btnMap, btnClean: btnClean, btnRub: btnRub, btnPrint: btnPrint
         };
 
         // Listeners attach once and read the current model, so Refresh never
@@ -379,6 +411,9 @@
         });
         btnClean.addEventListener('click', function () {
             if (state.model) downloadCsv(cleanupCsv(state.model), fileStem(state.model) + '_outcome-cleanup.csv');
+        });
+        btnRub.addEventListener('click', function () {
+            if (state.model) downloadCsv(rubricsCsv(state.model), fileStem(state.model) + '_rubrics.csv');
         });
         btnPrint.addEventListener('click', function () { window.print(); });
 
@@ -398,6 +433,7 @@
         ui.btnRefresh.disabled = busy;
         ui.btnMap.disabled = busy;
         ui.btnClean.disabled = busy;
+        ui.btnRub.disabled = busy;
         ui.btnPrint.disabled = busy;
     }
 
@@ -701,14 +737,22 @@
             });
             var rs = a.rubric_settings || null;
             var rec = {
-                id: String(a.id), name: (a.name || ('Assignment ' + a.id)).trim(),
+                id: String(a.id), name: plainText(a.name) || ('Assignment ' + a.id),
                 url: a.html_url || ('/courses/' + courseId + '/assignments/' + a.id),
                 published: a.published !== false, position: a.position || 0,
                 groupId: String(a.assignment_group_id),
                 hasRubric: !!crit,
                 rubricId: rs && rs.id != null ? String(rs.id) : null,
-                rubricTitle: (rs && rs.title) || '',
+                rubricTitle: plainText(rs && rs.title),
                 useRubricForGrading: a.use_rubric_for_grading !== false,
+                // Rubrics tab. points/rubricPoints stay null when Canvas sends
+                // none, so a missing value is never reported as a mismatch.
+                points: typeof a.points_possible === 'number' ? a.points_possible : null,
+                rubricPoints: rs && typeof rs.points_possible === 'number' ? rs.points_possible : null,
+                gradingType: a.grading_type || '',
+                isNewQuiz: a.is_quiz_lti_assignment === true,
+                isTool: (a.submission_types || []).indexOf('external_tool') >= 0 && a.is_quiz_lti_assignment !== true,
+                isDiscussion: (a.submission_types || []).indexOf('discussion_topic') >= 0,
                 locked: a.restricted_by_master_course === true,
                 isQuiz: a.quiz_id != null || a.is_quiz_assignment === true,
                 aligned: aligned,
@@ -739,24 +783,52 @@
 
         // Rubrics. "Attached" means some assignment's rubric_settings.id
         // points at it. Everything else is a bookmark-only rubric.
+        // usedBy lists the assignments (in assignment-group order) whose
+        // rubric_settings.id points at the rubric.
         var attached = {};
-        model.assignments.forEach(function (a) { if (a.rubricId) attached[a.rubricId] = true; });
+        var usedBy = {};
+        model.assignmentGroups.forEach(function (g) {
+            g.assignments.forEach(function (a) {
+                if (!a.rubricId) return;
+                attached[a.rubricId] = true;
+                (usedBy[a.rubricId] = usedBy[a.rubricId] || []).push(a);
+            });
+        });
+        model.rubricById = {};
         raw.rubrics.forEach(function (r) {
             var ids = [];
-            (Array.isArray(r.data) ? r.data : []).forEach(function (c) {
-                if (c && c.learning_outcome_id != null) {
+            var crit = Array.isArray(r.data) ? r.data : [];
+            var outcomeCrit = 0;
+            var sum = 0;
+            crit.forEach(function (c) {
+                if (!c) return;
+                if (typeof c.points === 'number' && c.ignore_for_scoring !== true) sum += c.points;
+                if (c.learning_outcome_id != null) {
+                    outcomeCrit++;
                     var k = String(c.learning_outcome_id);
                     if (ids.indexOf(k) < 0) ids.push(k);
                 }
             });
             var isAccount = r.context_type === 'Account';
             var rec = {
-                id: String(r.id), title: (r.title || ('Rubric ' + r.id)).trim(), outcomeIds: ids,
+                id: String(r.id), title: plainText(r.title) || ('Rubric ' + r.id), outcomeIds: ids,
                 attached: !!attached[String(r.id)],
+                isAccount: isAccount,
+                // points_possible is the stored total; the criteria sum is a
+                // fallback if a Canvas version ever leaves it out.
+                points: typeof r.points_possible === 'number' ? r.points_possible : (crit.length ? sum : null),
+                criteria: crit.length, outcomeCriteria: outcomeCrit,
+                // Duplicate check by content: description and points of each
+                // criterion, in order. Catches copies renamed by hand.
+                fingerprint: crit.length ? JSON.stringify(crit.map(function (c) {
+                    return [plainText(c && c.description).toLowerCase(), c && c.points];
+                })) : '',
+                usedBy: usedBy[String(r.id)] || [],
                 url: isAccount ? '/accounts/' + r.context_id + '/rubrics/' + r.id
                                : '/courses/' + courseId + '/rubrics/' + r.id
             };
             model.rubrics.push(rec);
+            model.rubricById[rec.id] = rec;
             if (!rec.attached) {
                 ids.forEach(function (oid) {
                     var o = model.outcomeById[oid];
@@ -765,7 +837,127 @@
             }
         });
 
+        model.rubricReport = buildRubricReport(model);
         return model;
+    }
+
+    // -- Rubrics tab checks ---------------------------------------------------
+    // Phase 1 data only (assignments + rubrics), so the tab is ready before
+    // question banks finish. Each assignment gets a flags[] list and each
+    // rubric a flags[] list; a flag is { key, text, warn }.
+
+    function buildRubricReport(model) {
+        var counts = { noRubric: 0, mismatch: 0, shared: 0, dupSets: 0, noOutcome: 0, unattached: 0, likelyRemove: 0, accountUnattached: 0 };
+
+        // Duplicate copy sets: same title (ignoring a "(1)" style suffix) or
+        // identical criteria. Union-find so one rubric that matches two others
+        // in different ways still lands in a single set.
+        var parent = {};
+        model.rubrics.forEach(function (r) { parent[r.id] = r.id; });
+        function find(x) { while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; } return x; }
+        function union(a, b) { var ra = find(a), rb = find(b); if (ra !== rb) parent[rb] = ra; }
+        var byTitle = {}, byPrint = {};
+        model.rubrics.forEach(function (r) {
+            var t = r.title.replace(/\s*\(\d+\)\s*$/, '').trim().toLowerCase();
+            if (byTitle[t]) union(byTitle[t], r.id); else byTitle[t] = r.id;
+            if (r.fingerprint) {
+                if (byPrint[r.fingerprint]) union(byPrint[r.fingerprint], r.id); else byPrint[r.fingerprint] = r.id;
+            }
+        });
+        var sets = {};
+        model.rubrics.forEach(function (r) { var k = find(r.id); (sets[k] = sets[k] || []).push(r); });
+        var setNo = 0;
+        model.rubrics.forEach(function (r) { r.dupSet = 0; r.flags = []; });
+        Object.keys(sets).forEach(function (k) {
+            if (sets[k].length < 2) return;
+            setNo++;
+            sets[k].forEach(function (r) { r.dupSet = setNo; r.dupOf = sets[k].length; });
+        });
+        counts.dupSets = setNo;
+
+        model.rubrics.forEach(function (r) {
+            if (r.usedBy.length > 1) {
+                counts.shared++;
+                r.flags.push({ key: 'shared', warn: true, text: 'Shared by ' + r.usedBy.length + ' assignments (editing locked)' });
+            }
+            if (r.dupSet) r.flags.push({ key: 'dup', warn: true, text: 'Copy set ' + r.dupSet + ' (' + r.dupOf + ' rubrics)' });
+            if (!r.attached) {
+                counts.unattached++;
+                r.flags.push({ key: 'unattached', warn: false, text: 'Not attached to any assignment' });
+            }
+            if (!r.outcomeCriteria) {
+                counts.noOutcome++;
+                r.flags.push({ key: 'noOutcome', warn: false, text: 'No outcome criteria' });
+            }
+            if (r.isAccount) r.flags.push({ key: 'account', warn: false, text: 'Account rubric' });
+        });
+
+        // Unattached rubrics, sorted by how safe they are to remove. Account
+        // rubrics are not the course's to delete, so they only get a count.
+        //   Likely remove: no criteria at all (an empty shell), or a copy in a
+        //     set where another member IS attached (course-copy leftover).
+        //   Review: everything else (a draft, or one saved for later).
+        var unattached = [];
+        model.rubrics.forEach(function (r) {
+            if (r.attached) return;
+            if (r.isAccount) { counts.accountUnattached++; return; }
+            var keep = r.dupSet ? model.rubrics.filter(function (x) {
+                return x.dupSet === r.dupSet && x.attached;
+            })[0] : null;
+            if (!r.criteria) {
+                r.removeHint = { likely: true, reason: 'No criteria' };
+            } else if (keep) {
+                r.removeHint = { likely: true, reason: 'Copy of "' + keep.title + '", which is attached' };
+            } else if (r.dupSet) {
+                r.removeHint = { likely: false, reason: 'In copy set ' + r.dupSet + ', but no copy is attached' };
+            } else {
+                r.removeHint = { likely: false, reason: 'Not a copy of another rubric' };
+            }
+            if (r.removeHint.likely) {
+                counts.likelyRemove++;
+                r.flags.push({ key: 'likelyRemove', warn: true, text: 'Likely remove' });
+            }
+            unattached.push(r);
+        });
+        unattached.sort(function (a, b) {
+            return (b.removeHint.likely - a.removeHint.likely) || (a.dupSet || 1e9) - (b.dupSet || 1e9) || a.title.localeCompare(b.title);
+        });
+
+        model.assignments.forEach(function (a) {
+            a.flags = [];
+            var graded = a.gradingType !== 'not_graded';
+            // A rubric is attached but is not in the course rubric list (for
+            // example an account rubric this user cannot list). Show what the
+            // assignment itself says about it.
+            a.rubricRec = a.rubricId ? (model.rubricById[a.rubricId] || null) : null;
+            if (!a.hasRubric) {
+                // Quizzes rarely use rubrics; their outcomes come from banks or
+                // the quiz engine, so they are not flagged.
+                if (graded && !a.isQuiz && !a.isNewQuiz) {
+                    counts.noRubric++;
+                    a.flags.push({ key: 'noRubric', warn: true, text: 'No rubric' + (a.isTool ? ' (external tool)' : '') });
+                }
+                return;
+            }
+            if (graded && a.points != null && a.rubricPoints != null && Math.abs(a.points - a.rubricPoints) > 0.001) {
+                counts.mismatch++;
+                a.flags.push(a.useRubricForGrading
+                    ? { key: 'mismatch', warn: true, text: 'Points mismatch: assignment ' + fmtPts(a.points) + ', rubric ' + fmtPts(a.rubricPoints) }
+                    : { key: 'mismatch', warn: false, text: 'Rubric total ' + fmtPts(a.rubricPoints) + ' differs from ' + fmtPts(a.points) + ' (rubric not used for grading)' });
+            }
+            // The soft mismatch text already says "not used for grading".
+            if (!a.useRubricForGrading && !a.flags.length) a.flags.push({ key: 'notGrading', warn: false, text: 'Rubric not used for grading' });
+            if (a.rubricRec && a.rubricRec.usedBy.length > 1) a.flags.push({ key: 'shared', warn: true, text: 'Shared with ' + (a.rubricRec.usedBy.length - 1) + ' other ' + (a.rubricRec.usedBy.length === 2 ? 'assignment' : 'assignments') });
+            if (a.rubricRec && a.rubricRec.dupSet) a.flags.push({ key: 'dup', warn: false, text: 'Rubric is in copy set ' + a.rubricRec.dupSet });
+            if (!Object.keys(a.aligned).length) a.flags.push({ key: 'noOutcome', warn: false, text: 'No outcome criteria' });
+        });
+
+        return { counts: counts, unattached: unattached };
+    }
+
+    function fmtPts(n) {
+        if (n == null) return '';
+        return (Math.round(n * 100) / 100).toString();
     }
 
     function unlinkedFor(model, oid, description) {
@@ -1088,27 +1280,8 @@
             });
         }
 
-        // 5. Duplicate rubric copies
-        var byTitle = {};
-        model.rubrics.forEach(function (r) {
-            var k = r.title.replace(/\s*\(\d+\)\s*$/, '').trim().toLowerCase();
-            (byTitle[k] = byTitle[k] || []).push(r);
-        });
-        var dupRub = [];
-        var rubSets = 0;
-        Object.keys(byTitle).forEach(function (k) {
-            var list = byTitle[k];
-            if (list.length < 2) return;
-            rubSets++;
-            list.forEach(function (r) {
-                dupRub.push({ type: 'Rubric', id: r.id, name: r.title, url: abs(r.url), detail: 'Copy set ' + rubSets + ' · ' + (r.attached ? 'attached to an assignment' : 'not attached') });
-            });
-        });
-        sections.push({
-            key: 'dupRubrics', title: 'Duplicate rubric copies',
-            help: 'Rubrics with the same title, or the same title plus a "(1)" style suffix.',
-            count: rubSets, countLabel: plural(rubSets, 'set'), items: dupRub
-        });
+        // Duplicate rubric copies moved to the Rubrics tab, which has the
+        // copy sets, what each copy is attached to, and Likely remove hints.
 
         // 6. Used but not linked in the course
         var bankById = {};
@@ -1186,8 +1359,70 @@
         ui.panelClean.textContent = '';
         renderCleanup(ui.panelClean, model);
 
-        var issues = model.cleanup ? model.cleanup.reduce(function (n, s) { return n + (s.count ? 1 : 0); }, 0) : 0;
-        ui.tabClean.textContent = 'Cleanup' + (issues ? ' (' + issues + ')' : '');
+        // Tab numbers count checks that found something, not items. The
+        // checklist at the top of each tab names every check, and the hover
+        // tip / accessible name says "N of M checks".
+        if (model.cleanup) {
+            var issues = model.cleanup.filter(function (s) { return s.count; }).length;
+            setTabCount(ui.tabClean, 'Outcome Cleanup', issues, model.cleanup.length);
+        } else {
+            setTabCount(ui.tabClean, 'Outcome Cleanup', null, 0);
+        }
+
+        ui.panelRub.textContent = '';
+        renderRubrics(ui.panelRub, model);
+        var rChecks = rubricChecks(model);
+        setTabCount(ui.tabRub, 'Rubrics', rChecks.filter(function (c) { return c.count; }).length, rChecks.length);
+    }
+
+    function setTabCount(tab, name, found, total) {
+        tab.textContent = name + (found ? ' (' + found + ')' : '');
+        if (found == null) {
+            tab.title = 'Waiting for question banks and quizzes';
+            tab.setAttribute('aria-label', name + ', still checking');
+        } else {
+            var t = found + ' of ' + total + ' checks found something. The checklist at the top of the tab lists them.';
+            tab.title = t;
+            tab.setAttribute('aria-label', name + ', ' + found + ' of ' + total + ' checks found something');
+        }
+    }
+
+    // Checklist strip at the top of a tab: every check by name, its result,
+    // and a button that scrolls to its section. Buttons, not #hash links:
+    // a hash change would reload the page out of map mode.
+    function renderChecklist(panel, root, title, checks, extra) {
+        var found = checks.filter(function (c) { return c.count; }).length;
+        var box = el('section', { class: 'card checks', 'aria-label': title });
+        box.appendChild(el('h2', null, [title + ' ',
+            el('span', { class: 'pill' + (found ? ' warn' : ' good'), text: found + ' of ' + checks.length + ' found something' })]));
+        var ul = el('ul', { class: 'checklist' });
+        checks.forEach(function (c) {
+            ul.appendChild(el('li', null, [
+                el('button', { type: 'button', class: 'linkbtn', text: c.title, onclick: function () {
+                    var t = root.getElementById(c.target);
+                    if (!t) return;
+                    t.scrollIntoView({ block: 'start' });
+                    t.setAttribute('tabindex', '-1');
+                    t.focus({ preventScroll: true });
+                } }),
+                el('span', { class: 'pill' + (c.count ? ' warn' : ' good'), text: c.count ? (c.countLabel || String(c.count)) : 'None found' })
+            ]));
+        });
+        box.appendChild(ul);
+        if (extra) box.appendChild(extra);
+        panel.appendChild(box);
+    }
+
+    // The five rubric checks that count toward the Rubrics tab number.
+    function rubricChecks(model) {
+        var rc = model.rubricReport.counts;
+        return [
+            { title: 'Graded assignments with no rubric', count: rc.noRubric, target: 'om-rub-assign' },
+            { title: 'Points mismatches', count: rc.mismatch, target: 'om-rub-assign' },
+            { title: 'Rubrics shared by more than one assignment', count: rc.shared, target: 'om-rub-all' },
+            { title: 'Duplicate rubric copies', count: rc.dupSets, countLabel: plural(rc.dupSets, 'set'), target: 'om-rub-all' },
+            { title: 'Unattached rubrics marked likely remove', count: rc.likelyRemove, target: 'om-rub-unatt' }
+        ];
     }
 
     function renderTiles(ui, model) {
@@ -1291,7 +1526,7 @@
             [el('span', { class: 'src src-institution', text: 'Inst.' }), 'Institution outcome'],
             [el('span', { class: 'src src-course', text: 'Course' }), 'Created in this course'],
             [el('span', { class: 'src src-other', text: 'Other' }), 'Created in another course'],
-            hasFlags ? [el('span', { class: 'k-flag', text: '\u2691' }), 'Likely remove (see Cleanup)'] : null
+            hasFlags ? [el('span', { class: 'k-flag', text: '\u2691' }), 'Likely remove (see Outcome Cleanup)'] : null
         ].filter(Boolean);
         var key = el('div', { class: 'key', role: 'list', 'aria-label': 'Map key' });
         keyItems.forEach(function (k) {
@@ -1486,7 +1721,10 @@
             ]));
         });
         lt.appendChild(lb);
-        panel.appendChild(lt);
+        // Same white card as the Outcome Cleanup and Rubrics tables. The map can make
+        // the page wider than the window; the card stays window-width so the
+        // last columns are not pushed off screen.
+        panel.appendChild(el('section', { class: 'card flat legend-card' }, [lt]));
 
         refreshStickyOffsets(panel);
     }
@@ -1508,7 +1746,7 @@
         if (!model.cleanup) {
             panel.appendChild(el('p', { class: 'empty', text:
                 'Checking question banks first, so that no outcome assessed only through a quiz bank is reported as unused. ' +
-                'Cleanup results appear here when that finishes.' }));
+                'Outcome Cleanup results appear here when that finishes.' }));
             return;
         }
         panel.appendChild(el('p', { class: 'hint no-print', text:
@@ -1521,12 +1759,16 @@
                 'may be listed as unused or likely remove here. Check those on the bank pages before removing anything.' }));
         }
 
+        renderChecklist(panel, panel.getRootNode(), 'Checks', model.cleanup.map(function (s) {
+            return { title: s.title, count: s.count, countLabel: s.countLabel, target: 'om-chk-' + s.key };
+        }));
+
         // Suggested fix order
         var bp = model.blueprint;
         var steps = [
             'Point rubric criteria at the outcome you are keeping (edit the rubric), and on question bank pages use Align Outcome for the kept outcome and remove the old one.',
             'Remove the outcomes you no longer need from the course Outcomes page. The Can remove now column in the legend shows which Canvas will allow.',
-            'Delete rubrics that are not attached to any assignment, if no one needs them.',
+            'Delete rubrics that are not attached to any assignment, if no one needs them. The Unattached rubrics list on the Rubrics tab marks the likely ones.',
             'Click Refresh here to check the result.'
         ];
         if (bp.role === 'master') steps.push('Sync the Blueprint so associated courses receive the fixes, then check one associated course.');
@@ -1544,7 +1786,7 @@
         panel.appendChild(order);
 
         model.cleanup.forEach(function (s) {
-            var box = el('section', { class: 'card' + (s.count ? '' : ' ok') });
+            var box = el('section', { class: 'card' + (s.count ? '' : ' ok'), id: 'om-chk-' + s.key });
             box.appendChild(el('h2', null, [
                 s.title + ' ',
                 el('span', { class: 'pill' + (s.count ? ' warn' : ' good'), text: s.count ? (s.countLabel || String(s.count)) : 'None found' })
@@ -1571,6 +1813,164 @@
             }
             panel.appendChild(box);
         });
+    }
+
+    // -- Rubrics tab ----------------------------------------------------------
+    // Summary tiles, then assignment rows grouped by assignment group, then
+    // every rubric in the course. Plain tables in a card: the page itself
+    // scrolls, there is no inner scroll box.
+
+    function renderRubrics(panel, model) {
+        var rc = model.rubricReport.counts;
+        var bp = model.blueprint;
+
+        panel.appendChild(el('p', { class: 'hint no-print', text:
+            'Rubric checks for every assignment, including ones with no outcomes. Each name links to its Canvas page ' +
+            '(opens in a new tab), where any change is made. The Outcome Map itself never changes Canvas. ' +
+            'After fixing something, click Refresh to check again.' }));
+
+        // Print-only heading so the printed Rubrics report names its course.
+        panel.appendChild(el('h2', { class: 'print-only', text: 'Rubrics' }));
+
+        // Not counted toward the tab number: often intentional, or the
+        // Unattached rubrics list already sorts them.
+        var noted = el('p', { class: 'help', text: 'Also noted, not counted: ' +
+            plural(rc.unattached, 'rubric') + ' not attached to any assignment, ' +
+            plural(rc.noOutcome, 'rubric') + ' with no outcome criteria, ' +
+            plural(model.rubrics.length, 'rubric') + ' in this course.' });
+        renderChecklist(panel, panel.getRootNode(), 'Checks', rubricChecks(model), noted);
+
+        // What the flags mean and how to act on them.
+        var notes = el('div', { class: 'notes' });
+        notes.appendChild(el('p', { class: 'note', text:
+            'Shared rubrics: Canvas will not let you edit a rubric that is attached to more than one assignment. ' +
+            'On the rubric page, the Rubrics+ "Unlock rubric for editing" button detaches the extra assignments, ' +
+            'and "Restore associations" reattaches them after you edit.' }));
+        notes.appendChild(el('p', { class: 'note', text:
+            'Points mismatch: when a rubric is used for grading, the rubric total sets the score, so a total that differs from ' +
+            'the assignment\'s points changes what students can earn. Quizzes and ungraded assignments are not checked for a missing rubric. ' +
+            'Rubrics used only on ungraded discussions are listed as not attached.' }));
+        if (bp.role === 'child') {
+            notes.appendChild(el('p', { class: 'note bp' }, [
+                'This course is managed by the Blueprint ',
+                el('a', { href: bp.parent.url, target: '_blank', rel: 'noopener', text: bp.parent.name }),
+                '. Fix shared rubrics there and sync.'
+            ]));
+        } else if (bp.role === 'master') {
+            notes.appendChild(el('p', { class: 'note bp', text:
+                'This is a Blueprint course. Rubric fixes made here reach associated courses when the Blueprint is synced.' }));
+        }
+        panel.appendChild(notes);
+
+        // Assignments, grouped by assignment group.
+        panel.appendChild(el('h2', { id: 'om-rub-assign', text: 'Assignments' }));
+        if (!model.assignments.length) {
+            panel.appendChild(el('p', { class: 'empty', text: 'This course has no assignments.' }));
+        } else {
+            var t = el('table', { class: 'clean rub' });
+            t.appendChild(el('thead', null, [el('tr', null,
+                ['Assignment', 'Points', 'Rubric', 'Rubric total', 'Used for grading', 'Outcome criteria', 'Flags'].map(function (h) {
+                    return el('th', { scope: 'col', text: h });
+                }))]));
+            var tb = el('tbody');
+            model.assignmentGroups.forEach(function (ag) {
+                tb.appendChild(el('tr', { class: 'agrp' }, [el('th', { scope: 'colgroup', colspan: '7', text: ag.name })]));
+                ag.assignments.forEach(function (a) {
+                    var badges = [];
+                    if (!a.published) badges.push(el('span', { class: 'badge', text: 'Unpublished' }));
+                    if (a.isQuiz || a.isNewQuiz) badges.push(el('span', { class: 'badge', text: a.isNewQuiz ? 'New Quiz' : 'Quiz' }));
+                    else if (a.isDiscussion) badges.push(el('span', { class: 'badge', text: 'Discussion' }));
+                    if (a.locked && bp.role === 'child') badges.push(el('span', { class: 'badge lock', text: 'Locked by Blueprint' }));
+                    var rubCell = !a.hasRubric ? el('span', { class: 'muted', text: '(none)' })
+                        : el('a', { href: a.rubricRec ? a.rubricRec.url : '/courses/' + courseId + '/rubrics/' + a.rubricId,
+                            target: '_blank', rel: 'noopener', text: a.rubricTitle || ('Rubric ' + a.rubricId) });
+                    var critN = Object.keys(a.aligned).reduce(function (n, k) { return n + a.aligned[k].length; }, 0);
+                    tb.appendChild(el('tr', null, [
+                        el('th', { scope: 'row', class: 'aname' }, [
+                            el('a', { href: a.url, target: '_blank', rel: 'noopener', text: a.name })
+                        ].concat(badges)),
+                        el('td', { class: 'num', text: a.gradingType === 'not_graded' ? 'Not graded' : fmtPts(a.points) }),
+                        el('td', null, [rubCell]),
+                        el('td', { class: 'num', text: a.hasRubric ? fmtPts(a.rubricPoints) : '' }),
+                        el('td', { text: a.hasRubric ? (a.useRubricForGrading ? 'Yes' : 'No') : '' }),
+                        el('td', { class: 'num', text: a.hasRubric ? String(critN) : '' }),
+                        el('td', null, flagPills(a.flags))
+                    ]));
+                });
+            });
+            t.appendChild(tb);
+            panel.appendChild(el('section', { class: 'card flat' }, [t]));
+        }
+
+        // Every rubric in the course.
+        panel.appendChild(el('h2', { id: 'om-rub-all', text: 'All rubrics in this course' }));
+        if (!model.rubrics.length) {
+            panel.appendChild(el('p', { class: 'empty', text: 'This course has no rubrics.' }));
+            return;
+        }
+        var rubs = model.rubrics.slice().sort(function (a, b) {
+            return (a.dupSet || 1e9) - (b.dupSet || 1e9) || a.title.localeCompare(b.title);
+        });
+        var rt = el('table', { class: 'clean rub' });
+        rt.appendChild(el('thead', null, [el('tr', null,
+            ['Rubric', 'ID', 'Total', 'Criteria', 'Outcome criteria', 'Used by', 'Flags'].map(function (h) {
+                return el('th', { scope: 'col', text: h });
+            }))]));
+        var rtb = el('tbody');
+        rubs.forEach(function (r) {
+            var used = r.usedBy.length ? r.usedBy.map(function (a, i) {
+                return [i ? '; ' : '', el('a', { href: a.url, target: '_blank', rel: 'noopener', text: a.name })];
+            }).reduce(function (acc, x) { return acc.concat(x); }, []) : [el('span', { class: 'muted', text: 'Not attached' })];
+            rtb.appendChild(el('tr', null, [
+                el('th', { scope: 'row', class: 'aname' }, [el('a', { href: r.url, target: '_blank', rel: 'noopener', text: r.title })]),
+                el('td', { class: 'mono', text: r.id }),
+                el('td', { class: 'num', text: fmtPts(r.points) }),
+                el('td', { class: 'num', text: String(r.criteria) }),
+                el('td', { class: 'num', text: String(r.outcomeCriteria) }),
+                el('td', { class: 'used' }, used),
+                el('td', null, flagPills(r.flags))
+            ]));
+        });
+        rt.appendChild(rtb);
+        panel.appendChild(el('section', { class: 'card flat' }, [rt]));
+
+        // Unattached rubrics: what could likely be deleted.
+        var un = model.rubricReport.unattached;
+        panel.appendChild(el('h2', { id: 'om-rub-unatt', text: 'Unattached rubrics' }));
+        panel.appendChild(el('p', { class: 'note warnnote', text:
+            'Check the rubric page before deleting. Rubrics used only on ungraded discussions are listed here because ungraded ' +
+            'discussions are not in the assignment list, and Canvas removes a rubric\'s past assessments when it is deleted.' +
+            (rc.accountUnattached ? ' ' + plural(rc.accountUnattached, 'account rubric') +
+                ' not attached here ' + (rc.accountUnattached === 1 ? 'is' : 'are') + ' left out: account rubrics are managed at the account level.' : '') }));
+        if (!un.length) {
+            panel.appendChild(el('p', { class: 'empty', text: 'Every course rubric is attached to at least one assignment.' }));
+            return;
+        }
+        var ut = el('table', { class: 'clean rub' });
+        ut.appendChild(el('thead', null, [el('tr', null,
+            ['Rubric', 'ID', 'Total', 'Criteria', 'Outcome criteria', 'Copy set', 'Reason', 'Hint'].map(function (h) {
+                return el('th', { scope: 'col', text: h });
+            }))]));
+        var utb = el('tbody');
+        un.forEach(function (r) {
+            utb.appendChild(el('tr', null, [
+                el('th', { scope: 'row', class: 'aname' }, [el('a', { href: r.url, target: '_blank', rel: 'noopener', text: r.title })]),
+                el('td', { class: 'mono', text: r.id }),
+                el('td', { class: 'num', text: fmtPts(r.points) }),
+                el('td', { class: 'num', text: String(r.criteria) }),
+                el('td', { class: 'num', text: String(r.outcomeCriteria) }),
+                el('td', { class: 'num', text: r.dupSet ? String(r.dupSet) : '' }),
+                el('td', { text: r.removeHint.reason }),
+                el('td', null, [el('span', { class: 'pill' + (r.removeHint.likely ? ' warn' : ' flag'), text: r.removeHint.likely ? 'Likely remove' : 'Review' })])
+            ]));
+        });
+        ut.appendChild(utb);
+        panel.appendChild(el('section', { class: 'card flat' }, [ut]));
+    }
+
+    function flagPills(flags) {
+        if (!flags.length) return [el('span', { class: 'pill good', text: 'OK' })];
+        return flags.map(function (f) { return el('span', { class: 'pill flag' + (f.warn ? ' warn' : ''), text: f.text }); });
     }
 
     // =========================================================================
@@ -1643,6 +2043,48 @@
             }
             s.items.forEach(function (it) { lines.push(csvRow([it.check, it.type, it.source, it.id, it.name, it.detail, it.hint, it.url])); });
         });
+        return lines.join('\r\n');
+    }
+
+    // Two blocks in one file: assignments (grouped like the tab), then every
+    // rubric. Flags are joined with "; " so each row stays one line.
+    function rubricsCsv(model) {
+        var abs = function (u) { return /^https?:/.test(u) ? u : window.location.origin + u; };
+        var flags = function (list) { return list.map(function (f) { return f.text; }).join('; '); };
+        var lines = [];
+        lines.push(csvRow(['Rubrics', model.course.name, model.course.code, 'Exported ' + new Date().toISOString().slice(0, 10)]));
+        lines.push('');
+        lines.push(csvRow(['Assignments']));
+        lines.push(csvRow(['Group', 'Assignment', 'ID', 'Published', 'Points', 'Rubric', 'Rubric ID', 'Rubric total',
+            'Used for grading', 'Outcome criteria', 'Flags', 'URL']));
+        model.assignmentGroups.forEach(function (ag) {
+            ag.assignments.forEach(function (a) {
+                var critN = Object.keys(a.aligned).reduce(function (n, k) { return n + a.aligned[k].length; }, 0);
+                lines.push(csvRow([ag.name, a.name, a.id, a.published ? 'Yes' : 'No',
+                    a.gradingType === 'not_graded' ? 'Not graded' : fmtPts(a.points),
+                    a.hasRubric ? (a.rubricTitle || ('Rubric ' + a.rubricId)) : '(no rubric)', a.rubricId || '',
+                    a.hasRubric ? fmtPts(a.rubricPoints) : '',
+                    a.hasRubric ? (a.useRubricForGrading ? 'Yes' : 'No') : '',
+                    a.hasRubric ? critN : '', flags(a.flags), abs(a.url)]));
+            });
+        });
+        lines.push('');
+        lines.push(csvRow(['All rubrics']));
+        lines.push(csvRow(['Rubric', 'ID', 'Source', 'Total', 'Criteria', 'Outcome criteria', 'Used by (count)',
+            'Used by', 'Copy set', 'Flags', 'URL']));
+        model.rubrics.forEach(function (r) {
+            lines.push(csvRow([r.title, r.id, r.isAccount ? 'Account' : 'Course', fmtPts(r.points), r.criteria,
+                r.outcomeCriteria, r.usedBy.length, r.usedBy.map(function (a) { return a.name; }).join('; '),
+                r.dupSet || '', flags(r.flags), abs(r.url)]));
+        });
+        lines.push('');
+        lines.push(csvRow(['Unattached rubrics (check the rubric page before deleting)']));
+        lines.push(csvRow(['Rubric', 'ID', 'Total', 'Criteria', 'Outcome criteria', 'Copy set', 'Reason', 'Hint', 'URL']));
+        model.rubricReport.unattached.forEach(function (r) {
+            lines.push(csvRow([r.title, r.id, fmtPts(r.points), r.criteria, r.outcomeCriteria, r.dupSet || '',
+                r.removeHint.reason, r.removeHint.likely ? 'Likely remove' : 'Review', abs(r.url)]));
+        });
+        if (!model.rubricReport.unattached.length) lines.push(csvRow(['None found']));
         return lines.join('\r\n');
     }
 
@@ -1787,11 +2229,40 @@
             '.prog-bar::-moz-progress-bar{background:' + C.accent + ';border-radius:7px;}',
             '.badge.warnbadge{color:' + C.warning + ';border-color:' + C.warning + ';}',
             'ol.steps{margin:4px 0 0;padding-left:22px;font-size:13px;}ol.steps li{margin:2px 0;}',
-            // Print: show both views, drop sticky/scroll, shrink type.
+            // Rubrics tab
+            '.print-only{display:none;}',
+            '.muted{color:' + C.muted + ';}',
+            '.card.flat{padding:4px 16px 8px;}',
+            'table.clean td.num{text-align:right;padding-right:16px;white-space:nowrap;font-variant-numeric:tabular-nums;}',
+            'table.rub th.aname{font-weight:400;min-width:220px;max-width:380px;}',
+            'table.rub tbody th.aname{border-bottom:0.5px solid #e3e6e8;color:inherit;}',
+            'table.rub tr.agrp th{background:' + C.accentBg + ';font-size:12px;font-weight:600;color:' + C.text + ';padding:4px 8px;}',
+            'table.rub td.used{max-width:420px;font-size:12px;}',
+            'table.rub td .pill{display:inline-block;margin:1px 4px 1px 0;}',
+            '.pill.flag{color:' + C.muted + ';}',
+            '.pill.flag.warn{color:' + C.warning + ';}',
+            '.legend-card{max-width:calc(100vw - 48px);}',
+            // Checklist strip
+            '.card.checks{max-width:1100px;}',
+            'ul.checklist{list-style:none;margin:6px 0 4px;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:2px 24px;font-size:13px;}',
+            'ul.checklist li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:0.5px solid #e3e6e8;}',
+            '.linkbtn{font:inherit;background:none;border:none;padding:0;color:' + C.accent + ';cursor:pointer;text-align:left;}',
+            '.linkbtn:hover{text-decoration:underline;}',
+            '.linkbtn:focus-visible,[tabindex="-1"]:focus{outline:2px solid ' + C.accent + ';outline-offset:2px;}',
+            'h2[tabindex="-1"]:focus:not(:focus-visible){outline:none;}',
+            // Print: Map and Cleanup print together; the Rubrics tab prints
+            // on its own when it is selected (.print-rubrics on .page).
+            // Drop sticky/scroll, shrink type.
             '@media print{',
                 '.no-print{display:none !important;}',
+                '.print-only{display:block;}',
                 '.page{padding:0;font-size:10px;}',
                 '.panel[hidden]{display:block !important;}',
+                '.page:not(.print-rubrics) #om-panel-rub{display:none !important;}',
+                '.page.print-rubrics #om-panel-map,.page.print-rubrics #om-panel-clean,.page.print-rubrics > .tiles{display:none !important;}',
+                'table.rub{font-size:9px;}',
+                'table.rub tr{break-inside:avoid;}',
+                'table.rub thead{display:table-header-group;}',
                 '#om-panel-clean{break-before:page;}',
                 '.scroll{width:auto;border:none;}',
                 'table.map{font-size:9px;}',
@@ -1801,6 +2272,9 @@
                 'table.map tbody tr:hover td,table.map tbody tr:hover th.aname{background:inherit;}',
                 '.tiles{grid-template-columns:repeat(4,1fr);}',
                 '.card{break-inside:avoid;}',
+                // Long tables (Legend, Rubrics) may split across pages.
+                '.card.flat{break-inside:auto;}',
+                '.legend-card{max-width:none;}',
             '}'
         ].join('\n');
     }
