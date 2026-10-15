@@ -8,4 +8,4 @@ your browser against the Canvas site you are already signed in to.
 
 > **Chrome Web Store:** https://chromewebstore.google.com/detail/canvas-pro-tools/kmknhmanmianmleefcabaocbekjjhplf
 >
-> If you want to install it locally, see [Installing locally](#install-locally) below. Especially, if you self-host Canvas.
+> If you want to install it locally, see [Installing locally](https://gustafsone.github.io/canvas-pro-tools/install/#advanced-load-it-unpacked). Especially, if you self-host Canvas.
